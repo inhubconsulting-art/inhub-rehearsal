@@ -1,0 +1,21 @@
+{
+  "name": "inhub-rehearsal",
+  "private": true,
+  "version": "0.1.0",
+  "description": "인허브 리허설 — CS 교육용 AI 고객 응대 롤플레이 서비스",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:web": "npm run dev -w @inhub/web",
+    "dev:worker": "npm run dev -w @inhub/worker",
+    "build": "npm run build -w @inhub/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:push": "supabase db push",
+    "db:seed": "supabase db reset"
+  }
+}

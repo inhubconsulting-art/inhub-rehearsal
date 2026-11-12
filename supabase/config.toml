@@ -1,0 +1,23 @@
+# ===== 쉬운 설명 =====
+# 무엇: Supabase 개발 도구(CLI) 설정. 이메일 인증을 끈 설정 등이 있습니다.
+# 언제: 개발자가 내 컴퓨터에서 DB를 띄우거나 운영 DB에 반영할 때.
+# 리뷰 포인트: 건너뛰어도 됩니다.
+# =====================
+# Supabase CLI 설정. 운영 프로젝트와 연결: `supabase link --project-ref <프로젝트 ref>`
+project_id = "inhub-rehearsal"
+
+[db]
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+[auth.email]
+enable_signup = true
+# 교육 당일 빠른 가입을 위해 이메일 인증을 끔 (필요하면 true)
+enable_confirmations = false

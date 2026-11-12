@@ -1,0 +1,38 @@
+/*
+  ===== 쉬운 설명 =====
+  무엇: 전체 화면의 기본 글꼴(Pretendard), 브랜드 색, 인쇄할 때 숨길 부분을 정합니다.
+  언제: 모든 화면.
+  리뷰 포인트: 브랜드 색을 바꾸고 싶으면 --color-brand-* 값을 바꾸면 됩니다.
+  =====================
+*/
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9eaff;
+  --color-brand-500: #2f6fed;
+  --color-brand-600: #2259cc;
+  --color-brand-700: #1c47a3;
+}
+
+html {
+  font-family: var(--font-sans);
+  word-break: keep-all;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .print-break {
+    break-after: page;
+  }
+}

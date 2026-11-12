@@ -1,0 +1,19 @@
+// ===== 쉬운 설명 =====
+// 무엇: 공통 패키지의 TypeScript 검사 설정.
+// 언제: 개발 도구가 코드 오류를 검사할 때.
+// 리뷰 포인트: 건너뛰어도 됩니다.
+// =====================
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src"]
+}

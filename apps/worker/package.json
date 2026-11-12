@@ -1,0 +1,26 @@
+{
+  "name": "@inhub/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "상시 서버: 음성 통화 사이드밴드 기록 + 평가·요약 작업 처리",
+  "scripts": {
+    "dev": "tsx watch src/boot.ts",
+    "start": "tsx src/boot.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@inhub/shared": "*",
+    "@supabase/supabase-js": "^2.57.0",
+    "fastify": "^5.0.0",
+    "openai": "^6.0.0",
+    "tsx": "^4.19.0",
+    "ws": "^8.18.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.12",
+    "typescript": "^5.6.0"
+  }
+}
