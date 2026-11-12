@@ -129,4 +129,5 @@ PRD와 다르게 구현한 부분:
 `/admin/usage` 는 토큰 사용량에 `apps/web/src/lib/cost.ts` 의 단가를 곱한 **추정치**입니다. 단가는 `PRICE_*` 환경변수로 바꿀 수 있으며, 실제 청구액은 OpenAI 대시보드에서 확인하세요.
 #   i n h u b - r e h e a r s u l  
  #   i n h u b - r e h e a r s u l  
+ #   i n h u b - r e h e a r s u l  
  
