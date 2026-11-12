@@ -13,7 +13,7 @@
   "scripts": {
     "dev:web": "npm run dev -w @inhub/web",
     "dev:worker": "npm run dev -w @inhub/worker",
-    "build": "npm run build -w @inhub/web",
+    "build:web": "npm run build -w @inhub/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:push": "supabase db push",
     "db:seed": "supabase db reset"
