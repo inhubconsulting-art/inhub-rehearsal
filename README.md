@@ -130,4 +130,5 @@ PRD와 다르게 구현한 부분:
 #   i n h u b - r e h e a r s u l  
  #   i n h u b - r e h e a r s u l  
  #   i n h u b - r e h e a r s u l  
+ #   i n h u b - r e h e a r s a l  
  
