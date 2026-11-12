@@ -7,10 +7,12 @@
  * =====================
  */
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { serverEnv } from "@/lib/env";
 
-let cached: ReturnType<typeof createClient> | null = null;
+// 쉬운 설명: DB 표 구조를 따로 선언하지 않았으므로 '어떤 표든 다룰 수 있음(any)'으로 지정합니다.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cached: SupabaseClient<any> | null = null;
 
 /** service_role 권한 클라이언트 (RLS 우회). 반드시 권한 확인 후 서버에서만 사용. */
 export function adminClient() {

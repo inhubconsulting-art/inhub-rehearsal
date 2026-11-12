@@ -51,9 +51,9 @@ export function EmotionFlow({ data }: { data: { seq: number; emotion: number }[]
             ticks={[0, 1, 2, 3, 4]}
             width={64}
             tick={{ fontSize: 11 }}
-            tickFormatter={(v: number) => EMOTION_LABELS[v] ?? ""}
+            tickFormatter={(v) => EMOTION_LABELS[Number(v)] ?? ""}
           />
-          <Tooltip formatter={(v: number) => [EMOTION_LABELS[v], "고객 감정"]} labelFormatter={(l) => `#${l}`} />
+          <Tooltip formatter={(v) => [EMOTION_LABELS[Number(v)] ?? "", "고객 감정"]} labelFormatter={(l) => `#${l}`} />
           <Line type="monotone" dataKey="emotion" stroke="#e11d48" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>

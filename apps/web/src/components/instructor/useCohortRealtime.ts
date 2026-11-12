@@ -10,11 +10,11 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 
-export interface PresenceInfo {
+export type PresenceInfo = {
   userId: string;
   name: string;
   activity: string;
-}
+};
 
 /** 차수 데이터 변경 시 화면 새로고침 + 수강생 접속(presence) 추적 */
 export function useCohortRealtime(cohortId: string) {

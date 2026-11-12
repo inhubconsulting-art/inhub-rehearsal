@@ -7,8 +7,11 @@
  * =====================
  */
 import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-let cached: ReturnType<typeof createBrowserClient> | null = null;
+// 쉬운 설명: 표 구조를 따로 선언하지 않았으므로 '어떤 표든 다룰 수 있음(any)'으로 지정합니다.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cached: SupabaseClient<any> | null = null;
 
 /** 브라우저용 클라이언트 (RLS 적용, 실시간 구독용) */
 export function browserClient() {
