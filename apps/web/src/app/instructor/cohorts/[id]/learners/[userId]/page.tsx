@@ -13,6 +13,7 @@ import { loadCohortDashboard } from "@/lib/cohort-data";
 import { AppShell } from "@/components/AppShell";
 import { Badge, Card, CardTitle, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { ScoreTrend } from "@/components/ScoreTrend";
+import { fmtDateTime } from "@/lib/format";
 
 /** 수강생 상세: 시도 이력, 점수 추이, 역량별 평균 (PRD A-23) */
 export default async function LearnerDetail({ params }: { params: Promise<{ id: string; userId: string }> }) {
@@ -103,7 +104,7 @@ export default async function LearnerDetail({ params }: { params: Promise<{ id: 
               <tbody>
                 {sessions.map((s) => (
                   <tr key={s.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                    <td className="px-4 py-2 text-slate-500">{new Date(s.startedAt).toLocaleString("ko-KR")}</td>
+                    <td className="px-4 py-2 text-slate-500">{fmtDateTime(s.startedAt)}</td>
                     <td className="px-4 py-2">
                       <Link href={`/instructor/sessions/${s.id}`} className="font-medium text-brand-600 hover:underline">
                         {title.get(s.scenarioId)}

@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
+import { setupWithRetry, uniqueTopic } from "@/lib/realtime";
 
 export type PresenceInfo = {
   userId: string;
@@ -29,30 +30,36 @@ export function useCohortRealtime(cohortId: string) {
       timer.current = setTimeout(() => router.refresh(), 800);
     };
     const ch = supabase
-      .channel(`dash:${cohortId}`)
+      .channel(uniqueTopic(`dash:${cohortId}`))
       .on("postgres_changes", { event: "*", schema: "public", table: "sessions", filter: `cohort_id=eq.${cohortId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "enrollments", filter: `cohort_id=eq.${cohortId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "cohort_summaries", filter: `cohort_id=eq.${cohortId}` }, refresh)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "evaluations" }, refresh)
       .subscribe();
 
-    const presence = supabase.channel(`cohort-presence:${cohortId}`);
-    const sync = () => {
-      const state = presence.presenceState<PresenceInfo>();
-      const m = new Map<string, PresenceInfo>();
-      for (const [key, metas] of Object.entries(state)) {
-        const last = metas[metas.length - 1];
-        if (last) m.set(key, { userId: key, name: last.name, activity: last.activity });
-      }
-      setOnline(m);
-    };
-    presence.on("presence", { event: "sync" }, sync).subscribe();
+    // '접속 중' 표시: 수강생 화면과 같은 이름을 써야 해서, 실패하면 잠시 뒤 다시 시도합니다.
+    const stopPresence = setupWithRetry(() => {
+      const presence = supabase.channel(`cohort-presence:${cohortId}`);
+      const sync = () => {
+        const state = presence.presenceState<PresenceInfo>();
+        const m = new Map<string, PresenceInfo>();
+        for (const [key, metas] of Object.entries(state)) {
+          const last = metas[metas.length - 1];
+          if (last) m.set(key, { userId: key, name: last.name, activity: last.activity });
+        }
+        setOnline(m);
+      };
+      presence.on("presence", { event: "sync" }, sync).subscribe();
+      return () => {
+        supabase.removeChannel(presence);
+      };
+    });
 
     // 오래 켜둔 화면도 '정체' 판단이 맞도록 1분마다 새로고침
     const poll = setInterval(() => router.refresh(), 60000);
     return () => {
       supabase.removeChannel(ch);
-      supabase.removeChannel(presence);
+      stopPresence();
       clearInterval(poll);
       if (timer.current) clearTimeout(timer.current);
     };

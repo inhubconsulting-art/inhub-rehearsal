@@ -16,6 +16,7 @@ import { Button, ErrorText, Textarea } from "@/components/ui";
 import { EmotionMeter } from "@/components/EmotionMeter";
 import { BriefingCard } from "./BriefingCard";
 import { useVoiceCall } from "./useVoiceCall";
+import { uniqueTopic } from "@/lib/realtime";
 
 export interface ChatLine {
   seq: number;
@@ -62,7 +63,7 @@ export function Conversation(props: {
     // 쉬운 설명: 서버에서 대화가 끝났다는 알림이 오면 리포트로 이동하고, 음성 대화의 확정된 발화를 받아 화면에 추가합니다.
     const supabase = browserClient();
     const ch = supabase
-      .channel(`session:${sessionId}`)
+      .channel(uniqueTopic(`session:${sessionId}`))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (p) => {
         const row = p.new as { status: string; current_emotion: number | null; mode: ConversationMode };
         if (row.current_emotion != null) setEmotion(row.current_emotion);

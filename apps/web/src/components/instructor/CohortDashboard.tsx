@@ -16,6 +16,7 @@ import { emotionLabel, type CohortRow, type CohortSummary, type Competency } fro
 import type { DashLearner, DashScenario, DashSession } from "@/lib/cohort-data";
 import { Badge, Button, Card, CardTitle, EmptyState, ErrorText, Input, LinkButton, Stat } from "@/components/ui";
 import { useCohortRealtime } from "./useCohortRealtime";
+import { fmtDateTime } from "@/lib/format";
 
 const STATUS = {
   ready: { label: "준비", tone: "amber" },
@@ -432,7 +433,7 @@ function AnalysisView({
           반 전체 AI 요약
         </CardTitle>
         {summary?.content ? (
-          <SummaryBody s={summary.content} meta={`평가 ${summary.evaluationCount}건 기준 · ${new Date(summary.updatedAt).toLocaleString("ko-KR")}`} />
+          <SummaryBody s={summary.content} meta={`평가 ${summary.evaluationCount}건 기준 · ${fmtDateTime(summary.updatedAt)}`} />
         ) : (
           <p className="text-sm text-slate-500">
             {scoredCount === 0 ? "평가가 쌓이면 요약을 만들 수 있습니다." : "‘AI 요약 만들기’를 누르면 공통 강점·약점과 코칭 팁을 정리합니다."}

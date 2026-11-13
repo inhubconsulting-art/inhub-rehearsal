@@ -10,6 +10,7 @@ import { COMPETENCIES, COMPETENCY_LABELS, END_REASON_LABELS, type EndReason } fr
 import { apiError, assertCohortStaff, audit, requireApiUser } from "@/lib/auth";
 import { loadCohortDashboard } from "@/lib/cohort-data";
 import { adminClient } from "@/lib/supabase/admin";
+import { fmtDateTime } from "@/lib/format";
 
 export const maxDuration = 60;
 
@@ -72,7 +73,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     for (const s of d.sessions) {
       const r = d.results.get(s.id);
       const row: Record<string, unknown> = {
-        at: new Date(s.startedAt).toLocaleString("ko-KR"),
+        at: fmtDateTime(s.startedAt),
         name: names.get(s.userId)?.name ?? "",
         scenario: titles.get(s.scenarioId) ?? "",
         mode: s.mode === "voice" ? "음성" : "텍스트",

@@ -11,6 +11,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/AppShell";
 import { Card, PageHeader } from "@/components/ui";
 import { RoleSelect } from "@/components/admin/RoleSelect";
+import { fmtDate } from "@/lib/format";
 
 export default async function Users({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const u = await requirePageUser(["admin"]);
@@ -43,7 +44,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
                 <td className="px-4 py-2 font-medium">{r.name}</td>
                 <td className="px-4 py-2 text-slate-600">{r.email}</td>
                 <td className="px-4 py-2 text-slate-600">{r.organization ?? "-"}</td>
-                <td className="px-4 py-2 text-slate-500">{new Date(r.created_at).toLocaleDateString("ko-KR")}</td>
+                <td className="px-4 py-2 text-slate-500">{fmtDate(r.created_at)}</td>
                 <td className="px-4 py-2">
                   <RoleSelect userId={r.id} role={r.role} disabled={r.id === u.id} />
                 </td>

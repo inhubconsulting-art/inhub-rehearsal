@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
+import { uniqueTopic } from "@/lib/realtime";
 
 /** 평가 생성 대기 화면: 평가가 저장되거나 세션 상태가 바뀌면 새로고침 (PRD L-30) */
 export function ReportWaiting({ sessionId }: { sessionId: string }) {
@@ -17,7 +18,7 @@ export function ReportWaiting({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     const supabase = browserClient();
     const ch = supabase
-      .channel(`report:${sessionId}`)
+      .channel(uniqueTopic(`report:${sessionId}`))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "evaluations", filter: `session_id=eq.${sessionId}` }, () =>
         router.refresh(),
       )

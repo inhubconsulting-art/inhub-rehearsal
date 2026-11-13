@@ -10,6 +10,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
+import { setupWithRetry, uniqueTopic } from "@/lib/realtime";
 
 /**
  * 수강생 화면 실시간 연결:
@@ -31,18 +32,24 @@ export function CohortLive({
   useEffect(() => {
     const supabase = browserClient();
     const changes = supabase
-      .channel(`cohort-changes:${cohortId}:${userId}`)
+      .channel(uniqueTopic(`cohort-changes:${cohortId}`))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "cohorts", filter: `id=eq.${cohortId}` }, () =>
         router.refresh(),
       )
       .subscribe();
-    const presence = supabase.channel(`cohort-presence:${cohortId}`, { config: { presence: { key: userId } } });
-    presence.subscribe(async (status) => {
-      if (status === "SUBSCRIBED") await presence.track({ userId, name, activity, at: new Date().toISOString() });
+    // '접속 중' 표시: 강사 화면과 같은 이름을 써야 해서, 실패하면 잠시 뒤 다시 시도합니다.
+    const stopPresence = setupWithRetry(() => {
+      const presence = supabase.channel(`cohort-presence:${cohortId}`, { config: { presence: { key: userId } } });
+      presence.subscribe(async (status) => {
+        if (status === "SUBSCRIBED") await presence.track({ userId, name, activity, at: new Date().toISOString() });
+      });
+      return () => {
+        supabase.removeChannel(presence);
+      };
     });
     return () => {
       supabase.removeChannel(changes);
-      supabase.removeChannel(presence);
+      stopPresence();
     };
   }, [cohortId, userId, name, activity, router]);
   return null;

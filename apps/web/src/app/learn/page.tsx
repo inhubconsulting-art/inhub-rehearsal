@@ -38,8 +38,24 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
     .map((r) => r.cohorts)
     .filter((c) => c && c.client_name !== "__preview__");
 
+  // 쉬운 설명: QR/링크로 들어와 주소에 입장 코드가 있는 경우
+  //  - 이미 참여한 교육의 코드면 그 교육을 바로 보여 주고,
+  //  - 처음 보는 코드면 화면 맨 위에 '입장 코드가 채워진 참여 칸'을 띄웁니다.
+  const code = (sp.code ?? "").trim().toUpperCase();
+  let codeCohortId: string | null = null;
+  if (code) {
+    const { data: byCode } = await db.from("cohorts").select("id").eq("join_code", code).maybeSingle();
+    codeCohortId = (byCode as { id: string } | null)?.id ?? null;
+  }
+  const joinedByCode = codeCohortId ? cohorts.find((c) => c.id === codeCohortId) : undefined;
+  const pendingCode = code && !joinedByCode ? code : "";
+
   const current =
-    cohorts.find((c) => c.id === sp.cohort) ?? cohorts.find((c) => c.status !== "ended") ?? cohorts[0] ?? null;
+    joinedByCode ??
+    cohorts.find((c) => c.id === sp.cohort) ??
+    cohorts.find((c) => c.status !== "ended") ??
+    cohorts[0] ??
+    null;
 
   if (!current) {
     return (
@@ -67,6 +83,13 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
   return (
     <AppShell user={u}>
       <CohortLive cohortId={current.id} userId={u.id} name={u.profile.name} activity="시나리오 목록" />
+      {pendingCode && (
+        <Card className="mb-6 border-brand-200 bg-brand-50/60">
+          <CardTitle>새 교육에 입장하기</CardTitle>
+          <p className="mb-3 text-sm text-slate-600">QR로 받은 입장 코드가 입력되어 있어요. 동의에 체크하고 참여하기를 눌러 주세요.</p>
+          <JoinForm initialCode={pendingCode} />
+        </Card>
+      )}
       <PageHeader
         title={current.title}
         description={[current.course_name, current.client_name].filter(Boolean).join(" · ")}
@@ -94,6 +117,17 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
         </div>
       )}
 
+      {current.status === "paused" && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="font-semibold">강사님이 실습을 잠시 멈췄습니다.</span> 다시 시작되면 이 화면에서 자동으로 열립니다.
+        </div>
+      )}
+      {current.status === "ended" && (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          이 교육의 실습은 종료되었습니다. 지난 리포트는 계속 볼 수 있어요.
+        </div>
+      )}
+
       {current.status === "ready" ? (
         <EmptyState title="강사님이 실습을 시작하면 시나리오가 열립니다.">이 화면을 켜 두면 자동으로 바뀝니다.</EmptyState>
       ) : (
@@ -116,7 +150,7 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{c.briefing.summary}</p>
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className="text-slate-500">
-                    약 {Math.round(c.timeLimitSec / 60)}분 · 시도 {p.attempts}회
+                    약 {Math.round((current.time_limit_sec ?? c.timeLimitSec) / 60)}분 · 시도 {p.attempts}회
                     {p.bestScore != null && <> · 최고 {Math.round(p.bestScore)}점</>}
                   </span>
                   {p.locked ? (

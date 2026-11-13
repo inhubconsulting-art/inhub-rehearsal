@@ -15,6 +15,7 @@ import { ReportWaiting } from "@/components/report/ReportWaiting";
 import { LiveTranscript } from "@/components/instructor/LiveTranscript";
 import { NoteForm } from "@/components/instructor/NoteForm";
 import { PrintButton } from "@/components/PrintButton";
+import { fmtDateTime } from "@/lib/format";
 
 /** 강사용 대화 상세: 진행 중이면 실시간 열람(PRD A-13), 끝났으면 리포트 + 코멘트·보정(R-04) */
 export default async function InstructorSession({ params }: { params: Promise<{ id: string }> }) {
@@ -27,7 +28,7 @@ export default async function InstructorSession({ params }: { params: Promise<{ 
     <AppShell user={u} wide>
       <PageHeader
         title={`${r.learnerName} · ${r.content.title}`}
-        description={`${new Date(r.session.started_at).toLocaleString("ko-KR")} · ${r.session.mode === "voice" ? "음성" : "텍스트"}`}
+        description={`${fmtDateTime(r.session.started_at)} · ${r.session.mode === "voice" ? "음성" : "텍스트"}`}
         actions={
           <div className="no-print flex gap-2">
             {r.evaluation && <PrintButton />}

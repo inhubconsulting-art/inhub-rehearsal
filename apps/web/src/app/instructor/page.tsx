@@ -11,6 +11,7 @@ import { requirePageUser } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/AppShell";
 import { Badge, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
+import { fmtDate } from "@/lib/format";
 
 const STATUS = {
   ready: { label: "준비", tone: "amber" },
@@ -54,7 +55,7 @@ export default async function InstructorHome() {
                 </p>
                 <p className="mt-3 text-sm text-slate-600">
                   수강생 {c.enrollments?.[0]?.count ?? 0}명
-                  {c.starts_at && ` · ${new Date(c.starts_at).toLocaleDateString("ko-KR")}`}
+                  {c.starts_at && ` · ${fmtDate(c.starts_at)}`}
                   {u.profile.role === "admin" && c.profiles?.name && ` · 강사 ${c.profiles.name}`}
                 </p>
               </Card>

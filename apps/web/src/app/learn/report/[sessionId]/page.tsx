@@ -13,6 +13,7 @@ import { EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { ReportView } from "@/components/report/ReportView";
 import { ReportWaiting } from "@/components/report/ReportWaiting";
 import { PrintButton } from "@/components/PrintButton";
+import { fmtDateTime } from "@/lib/format";
 
 export default async function LearnerReport({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;
@@ -25,7 +26,7 @@ export default async function LearnerReport({ params }: { params: Promise<{ sess
     <AppShell user={u}>
       <PageHeader
         title="응대 리포트"
-        description={`${r.content.title} · ${new Date(r.session.started_at).toLocaleString("ko-KR")}`}
+        description={`${r.content.title} · ${fmtDateTime(r.session.started_at)}`}
         actions={
           <div className="no-print flex gap-2">
             {r.evaluation && <PrintButton />}

@@ -11,6 +11,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/AppShell";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { ScoreTrend } from "@/components/ScoreTrend";
+import { fmtDateTime } from "@/lib/format";
 
 type Row = {
   id: string;
@@ -68,7 +69,7 @@ export default async function History() {
                   const e = ev(r);
                   return (
                     <tr key={r.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                      <td className="px-4 py-2 text-slate-500">{new Date(r.started_at).toLocaleString("ko-KR")}</td>
+                      <td className="px-4 py-2 text-slate-500">{fmtDateTime(r.started_at)}</td>
                       <td className="px-4 py-2">
                         <Link href={`/learn/report/${r.id}`} className="font-medium text-brand-600 hover:underline">
                           {r.scenarios?.title}

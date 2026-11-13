@@ -11,6 +11,7 @@ import { requirePageUser } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/AppShell";
 import { Badge, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
+import { fmtDate } from "@/lib/format";
 
 const STATUS = {
   draft: { label: "초안", tone: "amber" },
@@ -60,7 +61,7 @@ export default async function ScenarioList() {
                     <Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Badge>
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums">v{r.current_version}</td>
-                  <td className="px-4 py-2 text-right text-slate-500">{new Date(r.updated_at).toLocaleDateString("ko-KR")}</td>
+                  <td className="px-4 py-2 text-right text-slate-500">{fmtDate(r.updated_at)}</td>
                 </tr>
               ))}
             </tbody>

@@ -17,6 +17,7 @@ import {
 import { effectiveScore, type ReportData } from "@/lib/report";
 import { Badge, Card, CardTitle } from "@/components/ui";
 import { CompetencyRadar, EmotionFlow } from "./Charts";
+import { fmtDateTime } from "@/lib/format";
 
 const GRADE_TONE = { S: "violet", A: "blue", B: "green", C: "amber", D: "rose" } as const;
 
@@ -147,7 +148,7 @@ export function ReportView({ r, staffView, anonymize }: { r: ReportData; staffVi
             {r.notes.map((n) => (
               <div key={n.id} className="rounded-lg bg-violet-50 px-4 py-3 text-sm">
                 <div className="mb-1 text-xs text-violet-700">
-                  {n.author_name} · {new Date(n.created_at).toLocaleString("ko-KR")}
+                  {n.author_name} · {fmtDateTime(n.created_at)}
                   {n.score_override != null && ` · 점수 ${n.score_override}점으로 보정`}
                 </div>
                 {n.comment}
