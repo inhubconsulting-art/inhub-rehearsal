@@ -105,6 +105,20 @@ class SidebandSession {
           this.learnerTurns += 1;
           void this.enqueue(() => appendMessage(this.session.id, "learner", text));
         }
+        // 쉬운 설명: 수강생 말을 글자로 바꾸는 데 든 사용량(전사 비용)도 누적합니다.
+        // 토큰 단위로 오면 토큰 수를, 시간 단위로 오면 초를 기록합니다.
+        const tu = ev.usage;
+        if (tu) {
+          const delta: Record<string, number> =
+            tu.type === "duration"
+              ? { tr_seconds: Number(tu.seconds) || 0 }
+              : {
+                  tr_audio_input_tokens: tu.input_token_details?.audio_tokens ?? tu.input_tokens ?? 0,
+                  tr_text_input_tokens: tu.input_token_details?.text_tokens ?? 0,
+                  tr_output_tokens: tu.output_tokens ?? 0,
+                };
+          void addUsage(this.session.id, delta).catch(() => {});
+        }
         break;
       }
 

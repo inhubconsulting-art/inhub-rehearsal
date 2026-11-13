@@ -3,13 +3,16 @@
  * 무엇: 최근 90일 사용량·비용 추정(교육 차수별). 비용 상한의 80%를 넘으면 주황, 넘으면 빨강으로 표시합니다(PRD
  *     A-31).
  * 언제: 관리자 메뉴 '사용량'.
- * 리뷰 포인트: 추정치라는 안내가 분명한지 확인하세요.
+ *     위쪽에는 OpenAI에서 직접 불러온 '실제 청구액'(이번 달·지난 달)과 앱 추정치를 나란히 보여 줍니다.
+ * 리뷰 포인트: 차수별 금액은 앱 기록(토큰 수 × 단가표) 기반 추정이고, 실제 청구액은 기간 전체 합계만 있다는
+ *         점이 화면에서 분명한지 확인하세요. 실제/추정 비율이 크게 벌어지면 cost.ts 단가표를 고칠 때입니다.
  * =====================
  */
 import Link from "next/link";
 import { requirePageUser } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { estimateCost } from "@/lib/cost";
+import { fetchActualCosts, type ActualCosts } from "@/lib/openai-costs";
 import { AppShell } from "@/components/AppShell";
 import { Card, PageHeader, Stat } from "@/components/ui";
 
@@ -57,9 +60,30 @@ export default async function Usage() {
   }
   const list = [...byCohort.entries()].sort((a, b) => b[1].cost - a[1].cost);
 
+  // ── 실제 청구액(OpenAI) vs 앱 추정: 이번 달·지난 달 (OpenAI가 UTC 날짜로 집계하므로 UTC 기준) ──
+  const now = new Date();
+  const thisStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const lastStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  const estimateBetween = (a: Date, b: Date) =>
+    rows.reduce((sum, r) => {
+      const t = new Date(r.started_at).getTime();
+      return t >= a.getTime() && t < b.getTime() ? sum + estimateCost(r.usage ?? {}) : sum;
+    }, 0);
+  const [actualThis, actualLast] = await Promise.all([
+    fetchActualCosts(thisStart, tomorrow),
+    fetchActualCosts(lastStart, thisStart),
+  ]);
+  const periods: { label: string; actual: ActualCosts; estimate: number }[] = [
+    { label: `이번 달 (${thisStart.getUTCMonth() + 1}월)`, actual: actualThis, estimate: estimateBetween(thisStart, tomorrow) },
+    { label: `지난 달 (${lastStart.getUTCMonth() + 1}월)`, actual: actualLast, estimate: estimateBetween(lastStart, thisStart) },
+  ];
+
   return (
     <AppShell user={u} wide>
-      <PageHeader title="사용량·비용" description="최근 90일 · 토큰 사용량 기반 추정치이며 실제 청구액은 OpenAI 대시보드에서 확인하세요." />
+      <PageHeader title="사용량·비용" description="OpenAI 실제 청구액과, 앱이 기록한 사용량으로 계산한 교육 차수별 추정 비용입니다." />
+      <ActualVsEstimate periods={periods} />
+      <h2 className="mb-2 mt-8 text-sm font-semibold text-slate-700">교육 차수별 (최근 90일 · 앱 기록 기반 추정)</h2>
       <div className="mb-5 grid grid-cols-3 gap-3">
         <Stat label="대화 수" value={rows.length} />
         <Stat label="음성 대화 시간" value={`${Math.round(voiceMin)}분`} />
@@ -102,5 +126,83 @@ export default async function Usage() {
         </table>
       </Card>
     </AppShell>
+  );
+}
+
+const usd = (v: number) => `$${v.toFixed(2)}`;
+
+/** OpenAI 실제 청구액과 앱 추정치를 나란히 보여 주는 표 */
+function ActualVsEstimate({ periods }: { periods: { label: string; actual: ActualCosts; estimate: number }[] }) {
+  const first = periods[0].actual;
+  if (!first.ok && first.reason === "no_key") {
+    return (
+      <Card className="mb-2 border-amber-200 bg-amber-50 text-sm text-amber-900">
+        <p className="font-medium">OpenAI 실제 청구액을 보려면 관리자 키가 필요합니다.</p>
+        <p className="mt-1">
+          platform.openai.com → Settings → Organization → Admin keys 에서 키를 만든 뒤, Vercel 환경변수
+          <code className="mx-1 rounded bg-white px-1">OPENAI_ADMIN_KEY</code>에 넣고 Redeploy 하세요.
+        </p>
+      </Card>
+    );
+  }
+  const items = first.ok ? first.byLineItem.slice(0, 8) : [];
+  return (
+    <div className="grid gap-3 lg:grid-cols-[3fr_2fr]">
+      <Card className="p-0">
+        <table className="w-full text-sm">
+          <thead className="border-b border-slate-200 text-left text-slate-500">
+            <tr>
+              <th className="px-4 py-2 font-medium">기간 (UTC)</th>
+              <th className="px-4 py-2 text-right font-medium">OpenAI 실제 청구액</th>
+              <th className="px-4 py-2 text-right font-medium">앱 추정</th>
+              <th className="px-4 py-2 text-right font-medium">차이</th>
+            </tr>
+          </thead>
+          <tbody>
+            {periods.map((p) => {
+              const diff = p.actual.ok && p.estimate > 0 ? (p.actual.total / p.estimate - 1) * 100 : null;
+              return (
+                <tr key={p.label} className="border-b border-slate-100 last:border-0">
+                  <td className="px-4 py-2">{p.label}</td>
+                  <td className="px-4 py-2 text-right font-semibold tabular-nums">
+                    {p.actual.ok ? usd(p.actual.total) : <span className="font-normal text-rose-600">불러오기 실패</span>}
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums text-slate-600">{usd(p.estimate)}</td>
+                  <td
+                    className={`px-4 py-2 text-right tabular-nums ${
+                      diff != null && Math.abs(diff) > 20 ? "font-semibold text-amber-600" : "text-slate-500"
+                    }`}
+                  >
+                    {diff == null ? "-" : `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
+          실제 청구액은 OpenAI가 하루 단위로 집계하며 반영까지 시간이 걸릴 수 있어요. 미리보기·테스트 사용과 앱 밖의 사용(예:
+          Playground)도 포함됩니다. 차이가 ±20%를 넘으면 단가표를 점검하세요.
+          {!first.ok && first.message ? ` (오류: ${first.message})` : ""}
+        </p>
+      </Card>
+      <Card>
+        <p className="mb-2 text-sm font-medium text-slate-700">이번 달 실제 비용 항목</p>
+        {items.length === 0 ? (
+          <p className="text-sm text-slate-500">아직 항목이 없습니다.</p>
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {items.map((it) => (
+              <li key={it.name} className="flex justify-between gap-3">
+                <span className="truncate text-slate-600" title={it.name}>
+                  {it.name}
+                </span>
+                <span className="tabular-nums">{usd(it.value)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
   );
 }

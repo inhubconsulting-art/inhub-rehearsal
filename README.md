@@ -126,4 +126,4 @@ PRD와 다르게 구현한 부분:
 
 ## 비용 추정
 
-`/admin/usage` 는 토큰 사용량에 `apps/web/src/lib/cost.ts` 의 단가를 곱한 **추정치**입니다. 단가는 `PRICE_*` 환경변수로 바꿀 수 있으며, 실제 청구액은 OpenAI 대시보드에서 확인하세요.
+`/admin/usage` 는 토큰 사용량에 `apps/web/src/lib/cost.ts` 의 단가를 곱한 **추정치**입니다. 단가는 `PRICE_*` 환경변수로 바꿀 수 있으며, 음성 대화의 수강생 말 전사 비용도 포함됩니다. Vercel에 `OPENAI_ADMIN_KEY`(OpenAI 관리자 키)를 넣으면 같은 화면 위쪽에 OpenAI **실제 청구액**(이번 달·지난 달)과 추정치의 차이가 함께 표시됩니다.

@@ -66,11 +66,28 @@ export async function hangupCall(callId: string) {
   }).catch(() => {});
 }
 
-export async function addUsage(sessionId: string, delta: Record<string, number>) {
-  const { data } = await db.from("sessions").select("usage").eq("id", sessionId).maybeSingle();
-  const usage = { ...((data as { usage?: Record<string, number> } | null)?.usage ?? {}) };
-  for (const [k, v] of Object.entries(delta)) usage[k] = (usage[k] ?? 0) + (Number.isFinite(v) ? v : 0);
-  await db.from("sessions").update({ usage }).eq("id", sessionId);
+/**
+ * 쉬운 설명: 대화 1회의 사용량(토큰 수)을 더해 저장합니다.
+ * 음성 대화 중에는 'AI 답변'과 '수강생 말 전사' 사용량이 거의 동시에 들어오므로,
+ * 같은 대화의 기록은 한 줄로 세워 차례대로 저장합니다(동시에 저장하면 한쪽이 덮어써져 사라짐).
+ */
+const usageChains = new Map<string, Promise<void>>();
+
+export function addUsage(sessionId: string, delta: Record<string, number>): Promise<void> {
+  const prev = usageChains.get(sessionId) ?? Promise.resolve();
+  const next = prev
+    .catch(() => {})
+    .then(async () => {
+      const { data } = await db.from("sessions").select("usage").eq("id", sessionId).maybeSingle();
+      const usage = { ...((data as { usage?: Record<string, number> } | null)?.usage ?? {}) };
+      for (const [k, v] of Object.entries(delta)) usage[k] = (usage[k] ?? 0) + (Number.isFinite(v) ? v : 0);
+      await db.from("sessions").update({ usage }).eq("id", sessionId);
+    });
+  usageChains.set(sessionId, next);
+  void next.finally(() => {
+    if (usageChains.get(sessionId) === next) usageChains.delete(sessionId);
+  }).catch(() => {});
+  return next;
 }
 
 export async function classifyCustomerState(
