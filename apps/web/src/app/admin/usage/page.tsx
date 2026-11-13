@@ -12,7 +12,7 @@ import Link from "next/link";
 import { requirePageUser } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { estimateCost } from "@/lib/cost";
-import { fetchActualCosts, type ActualCosts } from "@/lib/openai-costs";
+import { fetchActualCostsFor, type ActualCosts } from "@/lib/openai-costs";
 import { AppShell } from "@/components/AppShell";
 import { Card, PageHeader, Stat } from "@/components/ui";
 
@@ -70,9 +70,10 @@ export default async function Usage() {
       const t = new Date(r.started_at).getTime();
       return t >= a.getTime() && t < b.getTime() ? sum + estimateCost(r.usage ?? {}) : sum;
     }, 0);
-  const [actualThis, actualLast] = await Promise.all([
-    fetchActualCosts(thisStart, tomorrow),
-    fetchActualCosts(lastStart, thisStart),
+  // 두 기간을 한 번의 조회로 가져옵니다 (OpenAI 조회 횟수 제한 때문)
+  const [actualThis, actualLast] = await fetchActualCostsFor([
+    { from: thisStart, to: tomorrow },
+    { from: lastStart, to: thisStart },
   ]);
   const periods: { label: string; actual: ActualCosts; estimate: number }[] = [
     { label: `이번 달 (${thisStart.getUTCMonth() + 1}월)`, actual: actualThis, estimate: estimateBetween(thisStart, tomorrow) },
@@ -165,7 +166,13 @@ function ActualVsEstimate({ periods }: { periods: { label: string; actual: Actua
                 <tr key={p.label} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-2">{p.label}</td>
                   <td className="px-4 py-2 text-right font-semibold tabular-nums">
-                    {p.actual.ok ? usd(p.actual.total) : <span className="font-normal text-rose-600">불러오기 실패</span>}
+                    {p.actual.ok ? (
+                      usd(p.actual.total)
+                    ) : p.actual.reason === "rate_limited" ? (
+                      <span className="font-normal text-amber-600">1분 뒤 새로고침</span>
+                    ) : (
+                      <span className="font-normal text-rose-600">불러오기 실패</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums text-slate-600">{usd(p.estimate)}</td>
                   <td
@@ -183,7 +190,11 @@ function ActualVsEstimate({ periods }: { periods: { label: string; actual: Actua
         <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
           실제 청구액은 OpenAI가 하루 단위로 집계하며 반영까지 시간이 걸릴 수 있어요. 미리보기·테스트 사용과 앱 밖의 사용(예:
           Playground)도 포함됩니다. 차이가 ±20%를 넘으면 단가표를 점검하세요.
-          {!first.ok && first.message ? ` (오류: ${first.message})` : ""}
+          {!first.ok && first.reason === "rate_limited"
+            ? " (OpenAI 조회 횟수 한도에 잠시 걸렸어요. 1분 뒤 새로고침하면 보이고, 이후 10분 동안은 저장된 값을 씁니다.)"
+            : !first.ok && first.message
+              ? ` (오류: ${first.message})`
+              : ""}
         </p>
       </Card>
       <Card>
