@@ -18,10 +18,22 @@ import { effectiveScore, type ReportData } from "@/lib/report";
 import { Badge, Card, CardTitle } from "@/components/ui";
 import { CompetencyRadar, EmotionFlow } from "./Charts";
 import { fmtDateTime } from "@/lib/format";
+import { StaffNotes } from "@/components/instructor/StaffNotes";
 
 const GRADE_TONE = { S: "violet", A: "blue", B: "green", C: "amber", D: "rose" } as const;
 
-export function ReportView({ r, staffView, anonymize }: { r: ReportData; staffView?: boolean; anonymize?: boolean }) {
+export function ReportView({
+  r,
+  staffView,
+  anonymize,
+  notesEditor,
+}: {
+  r: ReportData;
+  staffView?: boolean;
+  anonymize?: boolean;
+  /** 강사 화면에서 코멘트 수정·삭제를 허용할 때 (내 아이디, 관리자 여부) */
+  notesEditor?: { userId: string; isAdmin: boolean };
+}) {
   const ev = r.evaluation!;
   const res = ev.result;
   const score = effectiveScore(r) ?? 0;
@@ -141,7 +153,9 @@ export function ReportView({ r, staffView, anonymize }: { r: ReportData; staffVi
         )}
       </Card>
 
-      {r.notes.length > 0 && (
+      {notesEditor ? (
+        <StaffNotes notes={r.notes} userId={notesEditor.userId} isAdmin={notesEditor.isAdmin} />
+      ) : r.notes.length > 0 && (
         <Card>
           <CardTitle>강사 코멘트</CardTitle>
           <div className="space-y-2">
@@ -149,6 +163,7 @@ export function ReportView({ r, staffView, anonymize }: { r: ReportData; staffVi
               <div key={n.id} className="rounded-lg bg-violet-50 px-4 py-3 text-sm">
                 <div className="mb-1 text-xs text-violet-700">
                   {n.author_name} · {fmtDateTime(n.created_at)}
+                  {n.updated_at && " (수정됨)"}
                   {n.score_override != null && ` · 점수 ${n.score_override}점으로 보정`}
                 </div>
                 {n.comment}

@@ -49,7 +49,7 @@ export default async function InstructorSession({ params }: { params: Promise<{ 
         />
       ) : r.evaluation ? (
         <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-          <ReportView r={r} staffView />
+          <ReportView r={r} staffView notesEditor={{ userId: u.id, isAdmin: u.profile.role === "admin" }} />
           <Card className="no-print h-fit">
             <CardTitle>강사 코멘트·점수 보정</CardTitle>
             <NoteForm evaluationId={r.evaluation.id} currentScore={Number(r.evaluation.total_score)} />

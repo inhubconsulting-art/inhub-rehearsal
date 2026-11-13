@@ -9,6 +9,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "./LogoutButton";
+import { NavLinks } from "./NavLinks";
 
 const ROLE_LABEL = { learner: "수강생", instructor: "강사", admin: "운영 관리자" } as const;
 
@@ -29,17 +30,11 @@ export function AppShell({ user, children, wide }: { user: CurrentUser; children
           <Link href="/" className="font-bold text-brand-600">
             인허브 리허설
           </Link>
-          <nav className="flex gap-1 text-sm">
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} className="rounded-md px-3 py-1.5 text-slate-600 hover:bg-slate-100">
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+          <NavLinks links={links} />
           <div className="ml-auto flex items-center gap-3 text-sm text-slate-600">
-            <span>
+            <Link href="/account" className="rounded-md px-2 py-1 hover:bg-slate-100" title="내 계정">
               {user.profile.name} <span className="text-slate-400">· {ROLE_LABEL[role]}</span>
-            </span>
+            </Link>
             <LogoutButton />
           </div>
         </div>

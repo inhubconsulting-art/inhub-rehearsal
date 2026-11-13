@@ -15,7 +15,9 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/";
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    // 쉬운 설명: 링크가 만료됐거나 다른 브라우저에서 열어 확인에 실패하면 로그인 화면에서 안내합니다.
+    if (error) return NextResponse.redirect(`${origin}/login?notice=expired`);
   }
   return NextResponse.redirect(`${origin}${next.startsWith("/") ? next : "/"}`);
 }

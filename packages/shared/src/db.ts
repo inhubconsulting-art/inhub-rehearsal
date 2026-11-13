@@ -57,6 +57,8 @@ export interface CohortRow {
   announcement: string | null;
   budget_usd: number | null;
   created_at: string;
+  /** 보관한 시각. 값이 있으면 목록에서 '보관됨'으로 분류 */
+  archived_at: string | null;
 }
 
 export interface CohortScenarioRow {
@@ -120,10 +122,12 @@ export interface EvaluationRow {
 export interface InstructorNoteRow {
   id: string;
   evaluation_id: string;
-  author_id: string;
+  /** 작성자가 탈퇴하면 비어 있을 수 있음 */
+  author_id: string | null;
   comment: string | null;
   score_override: number | null;
   created_at: string;
+  updated_at: string | null;
 }
 
 export interface JobPayload {

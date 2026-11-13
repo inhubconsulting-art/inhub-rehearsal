@@ -17,6 +17,7 @@ import type { DashLearner, DashScenario, DashSession } from "@/lib/cohort-data";
 import { Badge, Button, Card, CardTitle, EmptyState, ErrorText, Input, LinkButton, Stat } from "@/components/ui";
 import { useCohortRealtime } from "./useCohortRealtime";
 import { fmtDateTime } from "@/lib/format";
+import { useToast } from "@/components/Toast";
 
 const STATUS = {
   ready: { label: "준비", tone: "amber" },
@@ -65,6 +66,7 @@ export function CohortDashboard(props: {
   const [announcement, setAnnouncement] = useState(cohort.announcement ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [toast, showToast] = useToast();
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 15000);
@@ -84,7 +86,8 @@ export function CohortDashboard(props: {
   const avgScore = scored.length ? Math.round(scored.reduce((a, s) => a + (s.score ?? 0), 0) / scored.length) : null;
   const pending = sessions.filter((s) => s.status === "ended" || s.status === "evaluating").length;
 
-  async function patch(body: Record<string, unknown>) {
+  /** 차수 상태·공지·보관을 바꿉니다. 성공하면 successMsg 알림을 띄웁니다. */
+  async function patch(body: Record<string, unknown>, successMsg?: string): Promise<boolean> {
     setBusy(true);
     setError(null);
     const res = await fetch(`/api/cohorts/${cohort.id}`, {
@@ -93,8 +96,26 @@ export function CohortDashboard(props: {
       body: JSON.stringify(body),
     });
     setBusy(false);
-    if (!res.ok) setError((await res.json()).error);
+    if (!res.ok) {
+      const msg = (await res.json().catch(() => ({}))).error ?? "저장하지 못했습니다.";
+      setError(msg);
+      showToast(msg, "error");
+      return false;
+    }
+    if (successMsg) showToast(successMsg);
     router.refresh();
+    return true;
+  }
+
+  // 쉬운 설명: 복제하면 새 차수가 만들어지고, 바로 그 차수의 '설정' 화면으로 이동합니다.
+  async function duplicate() {
+    if (!confirm("이 차수의 설정과 시나리오 구성을 복사해 새 차수를 만들까요? (수강생·대화 기록은 복사되지 않습니다)")) return;
+    setBusy(true);
+    const res = await fetch(`/api/cohorts/${cohort.id}/duplicate`, { method: "POST" });
+    const json = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) return showToast(json.error ?? "복제하지 못했습니다.", "error");
+    router.push(`/instructor/cohorts/${json.cohortId}/settings`);
   }
 
   async function requestSummary() {
@@ -107,6 +128,15 @@ export function CohortDashboard(props: {
 
   return (
     <div>
+      {toast}
+      {cohort.archived_at && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
+          <span>보관된 차수입니다. 강사 첫 화면의 &lsquo;보관됨&rsquo; 탭에서만 보입니다.</span>
+          <Button size="sm" variant="secondary" disabled={busy} onClick={() => void patch({ archived: false }, "보관을 해제했습니다")}>
+            보관 해제
+          </Button>
+        </div>
+      )}
       {/* 헤더 */}
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -118,24 +148,53 @@ export function CohortDashboard(props: {
             {[cohort.client_name, cohort.course_name].filter(Boolean).join(" · ")} · 수강생 {learners.length}명 · 시나리오{" "}
             {scenarios.length}개
           </p>
+          <div className="mt-2 flex flex-wrap gap-1.5 text-sm">
+            <Link
+              href={`/instructor/cohorts/${cohort.id}/settings`}
+              className="inline-flex items-center rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            >
+              ⚙ 설정
+            </Link>
+            <Button size="sm" variant="ghost" onClick={duplicate} disabled={busy}>
+              ⧉ 복제
+            </Button>
+            {cohort.status === "ended" && !cohort.archived_at && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => {
+                  if (confirm("이 차수를 보관할까요? 목록의 '보관됨' 탭으로 옮겨지며, 언제든 보관 해제할 수 있습니다.")) {
+                    void patch({ archived: true }, "보관했습니다");
+                  }
+                }}
+              >
+                🗄 보관
+              </Button>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setShowQr((v) => !v)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-left">
-            <div className="text-[10px] text-slate-500">입장 코드</div>
+          <button
+            onClick={() => setShowQr((v) => !v)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-left hover:bg-slate-50"
+            title="눌러서 QR 보기"
+          >
+            <div className="text-[10px] text-slate-500">입장 코드 · {showQr ? "QR 닫기" : "QR 보기"}</div>
             <div className="font-mono text-lg font-bold tracking-widest">{cohort.join_code}</div>
           </button>
           {cohort.status === "ready" && (
-            <Button onClick={() => patch({ status: "running" })} disabled={busy}>
+            <Button onClick={() => patch({ status: "running" }, "실습을 시작했습니다")} disabled={busy}>
               실습 시작
             </Button>
           )}
           {cohort.status === "running" && (
-            <Button variant="secondary" onClick={() => patch({ status: "paused" })} disabled={busy}>
+            <Button variant="secondary" onClick={() => patch({ status: "paused" }, "일시정지했습니다")} disabled={busy}>
               일시정지
             </Button>
           )}
           {cohort.status === "paused" && (
-            <Button onClick={() => patch({ status: "running" })} disabled={busy}>
+            <Button onClick={() => patch({ status: "running" }, "실습을 재개했습니다")} disabled={busy}>
               재개
             </Button>
           )}
@@ -144,14 +203,22 @@ export function CohortDashboard(props: {
               variant="danger"
               disabled={busy}
               onClick={() => {
-                if (confirm("실습을 종료할까요? 진행 중인 대화는 모두 종료되고 평가가 만들어집니다.")) void patch({ status: "ended" });
+                if (confirm("실습을 종료할까요? 진행 중인 대화는 모두 종료되고 평가가 만들어집니다.")) void patch({ status: "ended" }, "실습을 종료했습니다");
               }}
             >
               실습 종료
             </Button>
           )}
           {cohort.status === "ended" && (
-            <Button variant="secondary" onClick={() => patch({ status: "running" })} disabled={busy}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (confirm("종료한 실습을 다시 열까요? 수강생이 다시 대화를 시작할 수 있게 됩니다.")) {
+                  void patch({ status: "running" }, "실습을 다시 열었습니다");
+                }
+              }}
+              disabled={busy}
+            >
               다시 열기
             </Button>
           )}
@@ -181,11 +248,12 @@ export function CohortDashboard(props: {
           className="flex gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            void patch({ announcement });
+            if (!announcement.trim()) return;
+            void patch({ announcement }, "공지를 보냈습니다. 수강생 화면 상단에 표시됩니다");
           }}
         >
           <Input value={announcement} onChange={(e) => setAnnouncement(e.target.value)} placeholder="수강생 화면에 띄울 공지 (예: 10분 뒤 실습을 마칩니다)" />
-          <Button type="submit" variant="secondary" disabled={busy}>
+          <Button type="submit" variant="secondary" disabled={busy || !announcement.trim()}>
             공지 보내기
           </Button>
           {cohort.announcement && (
@@ -194,15 +262,20 @@ export function CohortDashboard(props: {
               variant="ghost"
               onClick={() => {
                 setAnnouncement("");
-                void patch({ announcement: null });
+                void patch({ announcement: null }, "공지를 지웠습니다");
               }}
             >
               지우기
             </Button>
           )}
         </form>
-        <ErrorText>{error}</ErrorText>
+        {cohort.announcement && (
+          <p className="mt-2 text-xs text-slate-500">
+            현재 표시 중인 공지: <span className="font-medium text-slate-700">{cohort.announcement}</span>
+          </p>
+        )}
       </Card>
+      <ErrorText>{error}</ErrorText>
 
       <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-5">
         <Stat label="접속 중" value={`${online.size}/${learners.length}`} />
@@ -305,7 +378,16 @@ function LiveView({
   cohortId: string;
 }) {
   if (learners.length === 0) return <EmptyState title="아직 입장한 수강생이 없습니다.">입장 코드를 눌러 QR을 띄워 주세요.</EmptyState>;
-  const withFlags = learners.map((l) => ({ l, ss: byLearner.get(l.userId) ?? [], flags: flagsFor(byLearner.get(l.userId) ?? [], now) }));
+  // 쉬운 설명: 카드 순서 = 도움 필요(문제 많은 순) → 대화 중 → 접속 대기 → 오프라인. 같은 그룹 안에서는 이름순.
+  const rank = (x: { ss: DashSession[]; flags: string[]; l: DashLearner }) => {
+    if (x.flags.length > 0) return 0;
+    if (x.ss.some((s) => s.status === "active")) return 1;
+    if (online.has(x.l.userId)) return 2;
+    return 3;
+  };
+  const withFlags = learners
+    .map((l) => ({ l, ss: byLearner.get(l.userId) ?? [], flags: flagsFor(byLearner.get(l.userId) ?? [], now) }))
+    .sort((a, b) => rank(a) - rank(b) || b.flags.length - a.flags.length || a.l.name.localeCompare(b.l.name, "ko"));
   const needHelp = withFlags.filter((x) => x.flags.length > 0);
   return (
     <div className="space-y-5">

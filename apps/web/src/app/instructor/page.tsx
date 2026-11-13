@@ -20,8 +20,13 @@ const STATUS = {
   ended: { label: "종료", tone: "slate" },
 } as const;
 
-export default async function InstructorHome() {
+// 쉬운 설명: 목록 순서 = 실습 중 → 일시정지 → 준비 → 종료. 같은 상태끼리는 최근에 만든 순.
+const ORDER = { running: 0, paused: 1, ready: 2, ended: 3 } as const;
+
+export default async function InstructorHome({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const u = await requirePageUser(["admin", "instructor"]);
+  const { view } = await searchParams;
+  const showArchived = view === "archived";
   let q = adminClient()
     .from("cohorts")
     .select("*, enrollments(count), profiles:instructor_id(name)")
@@ -29,7 +34,11 @@ export default async function InstructorHome() {
     .order("created_at", { ascending: false });
   if (u.profile.role !== "admin") q = q.eq("instructor_id", u.id);
   const { data } = await q;
-  const cohorts = (data ?? []) as (CohortRow & { enrollments: { count: number }[]; profiles: { name: string } | null })[];
+  const all = (data ?? []) as (CohortRow & { enrollments: { count: number }[]; profiles: { name: string } | null })[];
+  const archivedCount = all.filter((c) => c.archived_at).length;
+  const cohorts = all
+    .filter((c) => (showArchived ? Boolean(c.archived_at) : !c.archived_at))
+    .sort((a, b) => ORDER[a.status] - ORDER[b.status]);
 
   return (
     <AppShell user={u} wide>
@@ -38,8 +47,26 @@ export default async function InstructorHome() {
         description={u.profile.role === "admin" ? "전체 교육 차수" : "담당 교육 차수"}
         actions={<LinkButton href="/instructor/cohorts/new">새 교육 차수</LinkButton>}
       />
+      <div className="mb-4 flex gap-1 border-b border-slate-200 text-sm">
+        <Link
+          href="/instructor"
+          className={`-mb-px border-b-2 px-4 py-2 font-medium ${!showArchived ? "border-brand-500 text-brand-600" : "border-transparent text-slate-500"}`}
+        >
+          교육 차수 {all.length - archivedCount}
+        </Link>
+        <Link
+          href="/instructor?view=archived"
+          className={`-mb-px border-b-2 px-4 py-2 font-medium ${showArchived ? "border-brand-500 text-brand-600" : "border-transparent text-slate-500"}`}
+        >
+          보관됨 {archivedCount}
+        </Link>
+      </div>
       {cohorts.length === 0 ? (
-        <EmptyState title="아직 교육 차수가 없습니다.">‘새 교육 차수’로 시작하세요.</EmptyState>
+        showArchived ? (
+          <EmptyState title="보관한 차수가 없습니다.">종료한 차수의 대시보드에서 ‘보관’을 누르면 여기로 옮겨집니다.</EmptyState>
+        ) : (
+          <EmptyState title="아직 교육 차수가 없습니다.">‘새 교육 차수’로 시작하세요.</EmptyState>
+        )
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {cohorts.map((c) => (
