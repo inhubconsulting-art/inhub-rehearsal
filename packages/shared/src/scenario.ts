@@ -43,6 +43,31 @@ export const INDUSTRY_LABELS: Record<(typeof INDUSTRIES)[number], string> = {
   etc: "기타",
 };
 
+/**
+ * 쉬운 설명: 음성 대화에서 AI 고객이 '수강생 말이 끝났다'고 판단하는 방식.
+ * OpenAI semantic_vad 를 씁니다. 침묵 길이만 보지 않고 '말이 끝난 문장인지'를 AI가 판단해서,
+ * "음…", "그게…"처럼 말끝을 흐리면 더 기다려 줍니다. 최대 대기 시간은 느긋하게 8초, 보통 4초, 빠르게 2초입니다.
+ */
+export const WAIT_FOR_LEARNER = ["patient", "normal", "quick"] as const;
+export type WaitForLearner = (typeof WAIT_FOR_LEARNER)[number];
+export const WAIT_FOR_LEARNER_LABELS: Record<WaitForLearner, string> = {
+  patient: "느긋하게 기다림 (머뭇거려도 기다려 줌, 추천)",
+  normal: "보통",
+  quick: "빠르게 반응 (성격 급한 고객)",
+};
+const WAIT_TO_EAGERNESS: Record<WaitForLearner, "low" | "medium" | "high"> = { patient: "low", normal: "medium", quick: "high" };
+
+/** OpenAI 음성 통화의 turn_detection 설정값 */
+export function turnDetectionFor(wait: WaitForLearner | undefined) {
+  return {
+    type: "semantic_vad" as const,
+    eagerness: WAIT_TO_EAGERNESS[wait ?? "patient"],
+    create_response: true,
+    // 수강생이 AI 말 도중에 끼어들면 AI가 말을 멈춤 (실제 통화처럼)
+    interrupt_response: true,
+  };
+}
+
 export const SCENARIO_TYPES = ["inquiry", "complaint", "retention", "procedure"] as const;
 export const SCENARIO_TYPE_LABELS: Record<(typeof SCENARIO_TYPES)[number], string> = {
   inquiry: "문의",
@@ -134,8 +159,10 @@ export const ScenarioContentSchema = z.object({
     .object({
       voice: z.string().default("marin"),
       toneInstruction: z.string().default(""),
+      /** 수강생이 말을 멈췄을 때 AI 고객이 얼마나 기다렸다가 대답할지 (음성 모드) */
+      waitForLearner: z.enum(WAIT_FOR_LEARNER).default("patient"),
     })
-    .default({ voice: "marin", toneInstruction: "" }),
+    .default({ voice: "marin", toneInstruction: "", waitForLearner: "patient" }),
 });
 
 export type ScenarioContent = z.infer<typeof ScenarioContentSchema>;

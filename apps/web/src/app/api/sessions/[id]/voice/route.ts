@@ -3,11 +3,13 @@
  * 무엇: 음성 통화를 연결하는 서버 창구. 브라우저의 연결 요청을 OpenAI에 전달하고, 상시 서버에게 '이 통화를 옆에서
  *     기록하라'고 알립니다.
  * 언제: 음성 모드 대화 화면에 들어올 때, 또는 '다시 연결'을 누를 때.
- * 리뷰 포인트: 다시 연결할 때 지금까지의 대화를 AI 고객에게 알려줘서 처음부터 다시 시작하지 않게 하는 부분을 확인하세요.
+ * 리뷰 포인트: 수강생이 머뭇거려도 AI가 바로 끼어들지 않도록, 시나리오의 '기다려 주는 정도'(voice.waitForLearner)를
+ *         OpenAI 말 끝 판단 설정(semantic_vad)으로 넘깁니다. 기본은 '느긋하게'입니다.
+ *         다시 연결할 때 지금까지의 대화를 AI 고객에게 알려줘서 처음부터 다시 시작하지 않게 하는 부분을 확인하세요.
  * =====================
  */
 import { createHash } from "node:crypto";
-import { buildCustomerInstructions } from "@inhub/shared";
+import { buildCustomerInstructions, turnDetectionFor } from "@inhub/shared";
 import { apiError, HttpError, requireApiUser } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { getMessages, getOwnSession, hangupCall, loadScenarioContent } from "@/lib/domain";
@@ -55,7 +57,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       audio: {
         input: {
           transcription: { model: serverEnv.transcribeModel, language: "ko" },
-          turn_detection: { type: "server_vad" },
+          turn_detection: turnDetectionFor(content.voice.waitForLearner),
         },
         output: { voice: content.voice.voice },
       },

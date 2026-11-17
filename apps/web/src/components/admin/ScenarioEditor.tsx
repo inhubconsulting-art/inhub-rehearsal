@@ -20,6 +20,9 @@ import {
   SCENARIO_TYPES,
   SCENARIO_TYPE_LABELS,
   type ScenarioContent,
+  WAIT_FOR_LEARNER,
+  WAIT_FOR_LEARNER_LABELS,
+  type WaitForLearner,
 } from "@inhub/shared";
 import { Button, Card, CardTitle, ErrorText, Field, Input, Select, Textarea } from "@/components/ui";
 
@@ -226,6 +229,18 @@ export function ScenarioEditor({
               <Input value={c.voice.toneInstruction} onChange={(e) => set("voice", { ...c.voice, toneInstruction: e.target.value })} />
             </Field>
           </div>
+          <Field label="수강생이 머뭇거릴 때 (음성 모드)" hint="'느긋하게'는 '음…', '그게…'처럼 말끝을 흐리면 최대 8초까지 기다려 줍니다.">
+            <Select
+              value={c.voice.waitForLearner ?? "patient"}
+              onChange={(e) => set("voice", { ...c.voice, waitForLearner: e.target.value as WaitForLearner })}
+            >
+              {WAIT_FOR_LEARNER.map((w) => (
+                <option key={w} value={w}>
+                  {WAIT_FOR_LEARNER_LABELS[w]}
+                </option>
+              ))}
+            </Select>
+          </Field>
         </div>
       </Card>
 
