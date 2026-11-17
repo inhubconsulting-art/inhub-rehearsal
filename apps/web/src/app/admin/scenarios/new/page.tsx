@@ -42,7 +42,7 @@ const BLANK: ScenarioContent = {
     requiredSteps: [],
   },
   modelAnswers: [],
-  voice: { voice: "marin", toneInstruction: "" },
+  voice: { voice: "marin", toneInstruction: "", waitForLearner: "patient" },
 };
 
 export default async function NewScenario() {
