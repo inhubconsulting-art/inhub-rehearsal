@@ -3,7 +3,8 @@
  * ===== 쉬운 설명 =====
  * 무엇: 입장 코드 입력 + 개인정보·대화 저장 동의 체크박스.
  * 언제: 수강생 첫 화면.
- * 리뷰 포인트: 동의 문구가 의사결정(전사 텍스트만 저장, 녹음 원본 미저장)과 맞는지 확인하세요.
+ * 리뷰 포인트: 입장 전에 '내 정보'(소속·직무·경력)를 보여 주고, 바뀌었으면 고치고 들어오도록 안내합니다.
+ *         동의 문구가 의사결정(전사 텍스트만 저장, 녹음 원본 미저장)과 맞는지 확인하세요.
  * =====================
  */
 import { useState } from "react";
@@ -11,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, ErrorText, Input } from "@/components/ui";
 
-export function JoinForm({ initialCode = "" }: { initialCode?: string }) {
+export function JoinForm({ initialCode = "", profileSummary }: { initialCode?: string; profileSummary?: string }) {
   const router = useRouter();
   const [code, setCode] = useState(initialCode);
   const [consent, setConsent] = useState(false);
@@ -49,6 +50,15 @@ export function JoinForm({ initialCode = "" }: { initialCode?: string }) {
           참여하기
         </Button>
       </div>
+      {profileSummary && (
+        <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <span className="font-medium text-slate-800">내 정보</span> {profileSummary}
+          <span className="ml-2 text-xs text-slate-400">바뀌었다면</span>{" "}
+          <Link href="/account#profile" className="text-xs text-brand-600 underline">
+            먼저 고치기
+          </Link>
+        </p>
+      )}
       <label className="flex items-start gap-2 text-sm text-slate-600">
         <input type="checkbox" className="mt-0.5" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         <span>

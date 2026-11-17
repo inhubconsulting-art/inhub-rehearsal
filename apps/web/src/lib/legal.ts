@@ -48,7 +48,7 @@ export const PROCESSORS = [
     company: "Supabase, Inc.",
     country: "대한민국(서울 데이터센터) · 운영사 소재지 미국",
     task: "회원 정보·실습 기록 저장, 로그인 처리",
-    items: "이름, 이메일, 소속, 비밀번호(암호화), 대화 기록, 평가 결과",
+    items: "이름, 이메일, 소속·부서·업종·직무·경력, 비밀번호(암호화), 대화 기록, 평가 결과",
     contact: "privacy@supabase.io",
   },
   {
