@@ -164,7 +164,9 @@ export default function PrivacyPage() {
         <Table
           head={["구분", "내용"]}
           rows={[
-            ["성명 / 직책", `${PRIVACY_OFFICER.name} / ${PRIVACY_OFFICER.position}`],
+            PRIVACY_OFFICER.position
+              ? ["성명 / 직책", `${PRIVACY_OFFICER.name} / ${PRIVACY_OFFICER.position}`]
+              : ["성명", PRIVACY_OFFICER.name],
             ["이메일", PRIVACY_OFFICER.email],
           ]}
         />

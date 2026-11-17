@@ -26,6 +26,7 @@ export const OPERATOR = {
 /** 개인정보 보호책임자 */
 export const PRIVACY_OFFICER = {
   name: "김도연",
+  /** 직책 (비워 두면 표시하지 않음) */
   position: "",
   email: "pino@inhub.co.kr",
 };
