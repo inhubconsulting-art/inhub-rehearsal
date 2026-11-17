@@ -42,6 +42,32 @@ CS 교육 실습 시간에 수강생 20~30명이 동시에 AI 고객과 텍스�
 4. [ ] Authentication → Sign In / Providers → Email: 교육 당일 빠른 가입을 원하면 **Confirm email 끄기**.
 5. [ ] Authentication → URL Configuration: Site URL 을 웹앱 주소(Vercel 배포 후 받는 주소)로, Redirect URLs 에 `https://<웹앱 주소>/auth/callback` 추가.
 
+### 2-1. Google 로그인 켜기
+
+코드에는 'Google로 계속하기' 버튼이 이미 있습니다. 아래 설정을 마쳐야 버튼이 동작합니다. 환경변수는 따로 필요 없습니다(키는 Supabase에 저장).
+
+**Google Cloud Console** (console.cloud.google.com)
+1. [ ] 프로젝트 만들기 (예: `inhub-rehearsal`)
+2. [ ] APIs & Services → **OAuth consent screen**(Google Auth Platform → Branding): 앱 이름 `인허브 리허설`, 지원 이메일 입력. 대상(Audience)은 **External**.
+3. [ ] Audience → **Publish app**(운영 상태로 전환). 테스트 상태로 두면 직접 등록한 테스트 사용자 100명만 로그인할 수 있습니다. 이름·이메일만 받으므로 별도 심사는 필요 없습니다.
+4. [ ] Clients(사용자 인증 정보) → **Create client** → 유형 **Web application**
+   - Authorized JavaScript origins: `https://inhub-rehearsal.vercel.app`, `http://localhost:3000`
+   - Authorized redirect URIs: `https://<Supabase 프로젝트 ref>.supabase.co/auth/v1/callback` (Supabase 화면에 표시된 주소를 그대로 복사)
+5. [ ] 만들어진 **Client ID**와 **Client secret**을 복사
+
+**Supabase**
+1. [ ] Authentication → Sign In / Providers → **Google** → Enable
+2. [ ] 위에서 복사한 Client ID, Client secret 입력 → Save. 이 화면의 Callback URL을 Google 4번에 넣습니다.
+3. [ ] Authentication → URL Configuration → Redirect URLs 에 아래가 모두 있는지 확인
+   - `https://inhub-rehearsal.vercel.app/auth/callback`
+   - `http://localhost:3000/auth/callback` (내 컴퓨터에서 테스트할 때)
+   - dev 테스트 주소(Preview)에서도 쓰려면 `https://inhub-rehearsal-*.vercel.app/auth/callback`
+
+**동작 방식 메모**
+- 처음 Google로 들어온 사람은 자동으로 **수강생** 계정이 만들어집니다(이름은 구글 이름, 소속은 비어 있음).
+- 같은 이메일로 이미 이메일·비밀번호 가입을 한 사람이 Google로 들어오면 **같은 계정에 연결**됩니다. 강사·관리자 권한도 그대로입니다.
+- Google로만 가입한 사람은 비밀번호가 없어서 '내 계정'에서 비밀번호 변경 칸 대신 안내가 보입니다.
+
 ### 3. 환경변수 파일 만들기
 
 ```bash

@@ -7,6 +7,8 @@
  *  - 가입 이메일은 형식 검사를 하고, 흔한 오타(gmial.com 등)는 고친 주소를 제안합니다.
  *  - 가입 직전에 "이 이메일이 맞나요?" 확인을 한 번 더 받습니다 (오타 가입 방지).
  *  - 비밀번호 찾기: 이메일로 재설정 링크를 보내고, 링크를 누르면 /auth/reset-password 에서 새 비밀번호를 정합니다.
+ *  - 'Google로 계속하기': 구글 계정으로 가입·로그인을 한 번에 합니다. 처음이면 자동으로 수강생 계정이 만들어지고,
+ *    같은 이메일로 이미 가입한 계정이 있으면 그 계정으로 로그인됩니다(Supabase가 자동 연결).
  * =====================
  */
 import { Suspense, useState } from "react";
@@ -21,7 +23,20 @@ const NOTICE: Record<string, string> = {
   deleted: "회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.",
   password: "비밀번호를 바꿨습니다. 새 비밀번호로 로그인해 주세요.",
   expired: "링크가 만료되었거나 이미 사용되었습니다. 비밀번호 찾기를 다시 진행해 주세요.",
+  failed: "로그인을 마치지 못했습니다. 다시 시도해 주세요. 메일 링크였다면 만료됐거나 다른 브라우저에서 열었을 수 있어요.",
 };
+
+/** 구글 'G' 로고 (공식 4색) */
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+    </svg>
+  );
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -42,6 +57,26 @@ function LoginForm() {
   const emailTrim = email.trim();
   const emailFix = mode === "signup" ? suggestEmailFix(emailTrim) : null;
   const emailInvalid = emailTrim.length > 0 && !isValidEmail(emailTrim);
+
+  /** 쉬운 설명: 구글 로그인 화면으로 보냈다가, 끝나면 /auth/callback 으로 돌아와 원래 가려던 화면(next)으로 갑니다. */
+  async function googleLogin() {
+    setError(null);
+    setInfo(null);
+    setBusy(true);
+    const { error } = await browserClient().auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        // 여러 구글 계정을 쓰는 사람도 매번 계정을 고를 수 있게 합니다 (공용 PC 실습실 대비).
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    // 성공하면 구글 화면으로 이동하므로, 여기까지 오는 건 실패했을 때뿐입니다.
+    if (error) {
+      setBusy(false);
+      setError("Google 로그인을 시작하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+    }
+  }
 
   function switchMode(m: Mode) {
     setMode(m);
@@ -154,6 +189,19 @@ function LoginForm() {
             </button>
           ))}
         </div>
+      )}
+      {mode !== "reset" && (
+        <>
+          <Button type="button" variant="secondary" size="lg" className="flex w-full items-center justify-center gap-2" onClick={googleLogin} disabled={busy}>
+            <GoogleIcon />
+            Google로 계속하기
+          </Button>
+          <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
+            <div className="h-px flex-1 bg-slate-200" />
+            또는 이메일로 {mode === "login" ? "로그인" : "가입"}
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+        </>
       )}
       <form onSubmit={submit} className="space-y-4" noValidate>
         {mode === "signup" && (
