@@ -3,12 +3,13 @@
  * 무엇: 모든 화면 요청 앞에서 '로그인했는가'를 확인하는 문지기입니다.
  * 언제: 사용자가 어떤 주소로 들어오든 매번.
  * 리뷰 포인트: 로그인하지 않은 사용자가 로그인 화면으로 보내지는지만 확인하면 됩니다.
+ *         이용약관(/terms)·개인정보처리방침(/privacy)은 Google 심사와 법령상 누구나 볼 수 있어야 해서 예외로 둡니다.
  * =====================
  */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+const PUBLIC_PATHS = ["/login", "/auth", "/privacy", "/terms"];
 
 /** 로그인 세션 쿠키 갱신 + 미로그인 사용자를 로그인 화면으로 보냄 */
 export async function middleware(request: NextRequest) {

@@ -7,11 +7,13 @@
  *  - 가입 이메일은 형식 검사를 하고, 흔한 오타(gmial.com 등)는 고친 주소를 제안합니다.
  *  - 가입 직전에 "이 이메일이 맞나요?" 확인을 한 번 더 받습니다 (오타 가입 방지).
  *  - 비밀번호 찾기: 이메일로 재설정 링크를 보내고, 링크를 누르면 /auth/reset-password 에서 새 비밀번호를 정합니다.
+ *  - 가입(이메일·Google 모두) 시 이용약관·개인정보처리방침 링크와 '만 14세 이상' 안내를 보여 줍니다.
  *  - 'Google로 계속하기': 구글 계정으로 가입·로그인을 한 번에 합니다. 처음이면 자동으로 수강생 계정이 만들어지고,
  *    같은 이메일로 이미 가입한 계정이 있으면 그 계정으로 로그인됩니다(Supabase가 자동 연결).
  * =====================
  */
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { isValidEmail, suggestEmailFix } from "@/lib/email";
@@ -286,13 +288,43 @@ function LoginForm() {
           <button type="button" className="text-slate-500 hover:underline" onClick={() => switchMode("login")}>
             ← 로그인으로 돌아가기
           </button>
-        ) : mode === "login" ? (
-          <button type="button" className="text-slate-500 hover:underline" onClick={() => switchMode("reset")}>
-            비밀번호를 잊으셨나요?
-          </button>
-        ) : null}
+        ) : (
+          <>
+            {mode === "login" && (
+              <button type="button" className="mb-3 text-slate-500 hover:underline" onClick={() => switchMode("reset")}>
+                비밀번호를 잊으셨나요?
+              </button>
+            )}
+            <AgreeNotice action={mode === "signup" ? "가입하거나 Google로 계속하면" : "Google로 처음 계속하면"} />
+          </>
+        )}
+      </div>
+      <div className="mt-6 flex justify-center gap-3 border-t border-slate-100 pt-4 text-xs text-slate-400">
+        <Link href="/terms" className="hover:underline">
+          이용약관
+        </Link>
+        <Link href="/privacy" className="font-semibold text-slate-500 hover:underline">
+          개인정보처리방침
+        </Link>
       </div>
     </Card>
+  );
+}
+
+/** 쉬운 설명: 가입 전에 약관·방침을 볼 수 있게 링크와 함께 안내하는 문구 */
+function AgreeNotice({ action }: { action: string }) {
+  return (
+    <p className="text-xs leading-5 text-slate-500">
+      {action}{" "}
+      <Link href="/terms" target="_blank" className="underline">
+        이용약관
+      </Link>
+      과{" "}
+      <Link href="/privacy" target="_blank" className="underline">
+        개인정보처리방침
+      </Link>
+      (AI 처리를 위한 해외 업체 위탁 포함)에 동의하게 됩니다. 만 14세 이상만 가입할 수 있어요.
+    </p>
   );
 }
 

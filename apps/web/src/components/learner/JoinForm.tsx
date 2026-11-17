@@ -7,6 +7,7 @@
  * =====================
  */
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, ErrorText, Input } from "@/components/ui";
 
@@ -52,7 +53,10 @@ export function JoinForm({ initialCode = "" }: { initialCode?: string }) {
         <input type="checkbox" className="mt-0.5" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         <span>
           실습 대화 내용(텍스트, 음성은 자막으로 변환된 텍스트)이 저장되고 AI 평가 및 강사 피드백에 사용되는 것에
-          동의합니다. 음성 녹음 원본은 저장하지 않습니다.
+          동의합니다. 음성 녹음 원본은 저장하지 않습니다.{" "}
+          <Link href="/privacy" target="_blank" className="text-brand-600 underline">
+            자세히 보기
+          </Link>
         </span>
       </label>
       <ErrorText>{error}</ErrorText>

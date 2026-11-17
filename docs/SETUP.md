@@ -49,6 +49,9 @@ CS 교육 실습 시간에 수강생 20~30명이 동시에 AI 고객과 텍스�
 **Google Cloud Console** (console.cloud.google.com)
 1. [ ] 프로젝트 만들기 (예: `inhub-rehearsal`)
 2. [ ] APIs & Services → **OAuth consent screen**(Google Auth Platform → Branding): 앱 이름 `인허브 리허설`, 지원 이메일 입력. 대상(Audience)은 **External**.
+2-1. [ ] Branding: 홈페이지 `https://inhub-rehearsal.vercel.app`, 개인정보처리방침 `…/privacy`, 서비스 약관 `…/terms`,
+   승인된 도메인 `<프로젝트 ref>.supabase.co`, `inhub-rehearsal.vercel.app`. **앱 로고는 올리지 마세요**(올리면 Google 브랜드 심사가 시작되어 며칠 걸림).
+   두 문서의 회사 정보는 `apps/web/src/lib/legal.ts` 의 【 】 값을 채우면 됩니다.
 3. [ ] Audience → **Publish app**(운영 상태로 전환). 테스트 상태로 두면 직접 등록한 테스트 사용자 100명만 로그인할 수 있습니다. 이름·이메일만 받으므로 별도 심사는 필요 없습니다.
 4. [ ] Clients(사용자 인증 정보) → **Create client** → 유형 **Web application**
    - Authorized JavaScript origins: `https://inhub-rehearsal.vercel.app`, `http://localhost:3000`
