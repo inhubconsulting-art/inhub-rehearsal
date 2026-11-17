@@ -58,6 +58,8 @@ export async function middleware(request: NextRequest) {
         .eq("id", user.id)
         .maybeSingle();
       // DB 칸이 아직 없거나(마이그레이션 전) 조회에 실패하면 막지 않고 그냥 통과시킵니다.
+      // 이유는 터미널(로컬)·Vercel 로그에 남겨 둡니다. 화면 쪽(requirePageUser)에서 한 번 더 확인합니다.
+      if (error) console.warn("[프로필 확인 실패] 안내 없이 통과:", error.message);
       if (!error && profile) {
         const p = profile as { role: string; profile_completed_at: string | null };
         if (p.role === "learner" && !p.profile_completed_at) {

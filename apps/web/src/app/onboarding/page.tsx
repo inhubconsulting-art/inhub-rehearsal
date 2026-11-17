@@ -15,7 +15,7 @@ import { ProfileForm } from "@/components/ProfileForm";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export default async function Onboarding({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const u = await requirePageUser();
+  const u = await requirePageUser(undefined, { allowIncompleteProfile: true });
   const sp = await searchParams;
   const next = sp.next && sp.next.startsWith("/") && !sp.next.startsWith("//") ? sp.next : "/";
   if (u.profile.profile_completed_at || u.profile.role !== "learner") redirect(next);
