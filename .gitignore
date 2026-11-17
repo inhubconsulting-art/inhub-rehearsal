@@ -10,3 +10,7 @@ supabase/.temp
 
 # 임시 파일 보관 폴더 (업로드 제외)
 _to_delete/
+
+# Claude 앱이 만든 결과물 폴더 (키 관리표 등 내부 문서가 들어 있으므로 업로드 제외)
+Claude outputs/
+*.xlsx

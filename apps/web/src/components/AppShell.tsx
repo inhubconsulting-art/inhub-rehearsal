@@ -2,7 +2,8 @@
  * ===== 쉬운 설명 =====
  * 무엇: 화면 위쪽 메뉴 바. 역할에 따라 보이는 메뉴가 달라집니다.
  * 언제: 로그인 후 대부분의 화면.
- * 리뷰 포인트: 수강생에게는 '실습'만, 강사에게는 '강사 대시보드'까지, 관리자에게는 '시나리오·사용자·사용량'까지 보이는지 확인하세요.
+ * 리뷰 포인트: 화면 맨 아래에는 이용약관·개인정보처리방침 링크가 항상 보입니다(법령상 상시 게시 의무).
+ *         수강생에게는 '실습'만, 강사에게는 '강사 대시보드'까지, 관리자에게는 '시나리오·사용자·사용량'까지 보이는지 확인하세요.
  * =====================
  */
 import Link from "next/link";
@@ -40,6 +41,15 @@ export function AppShell({ user, children, wide }: { user: CurrentUser; children
         </div>
       </header>
       <main className={wide ? "mx-auto max-w-7xl px-4 py-6" : "mx-auto max-w-5xl px-4 py-6"}>{children}</main>
+      <footer className="no-print mt-10 border-t border-slate-100 py-5 text-center text-xs text-slate-400">
+        <Link href="/terms" className="hover:underline">
+          이용약관
+        </Link>
+        <span className="mx-2">·</span>
+        <Link href="/privacy" className="font-semibold text-slate-500 hover:underline">
+          개인정보처리방침
+        </Link>
+      </footer>
     </div>
   );
 }
