@@ -2,7 +2,8 @@
  * ===== 쉬운 설명 =====
  * 무엇: 로그인·역할(수강생/강사/관리자) 확인, 오류 응답, 감사 기록(누가 무엇을 했는지) 같은 공통 보안 기능.
  * 언제: 거의 모든 화면과 API의 첫 줄에서.
- * 리뷰 포인트: 강사는 '담당 차수만' 볼 수 있게 하는 assertCohortStaff 규칙이 PRD A-30과 맞는지 확인하세요.
+ * 리뷰 포인트: 프로필(직무·경력)을 아직 안 채운 수강생은 화면을 열 때 '프로필 완성'으로 보냅니다(문지기와 이중 확인).
+ *         강사는 '담당 차수만' 볼 수 있게 하는 assertCohortStaff 규칙이 PRD A-30과 맞는지 확인하세요.
  * =====================
  */
 import "server-only";
@@ -29,10 +30,16 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return { id: user.id, email: user.email ?? null, profile: profile as ProfileRow };
 }
 
-/** 페이지용: 로그인 + 역할 확인, 아니면 리다이렉트 */
-export async function requirePageUser(roles?: Role[]): Promise<CurrentUser> {
+/** 수강생인데 프로필(직무·경력)을 아직 안 채웠는지. DB 칸이 없으면(마이그레이션 전) 막지 않음 */
+export function needsOnboarding(u: CurrentUser): boolean {
+  return u.profile.role === "learner" && "profile_completed_at" in u.profile && !u.profile.profile_completed_at;
+}
+
+/** 페이지용: 로그인 + 역할 확인 + (수강생) 프로필 완성 확인, 아니면 리다이렉트 */
+export async function requirePageUser(roles?: Role[], opts?: { allowIncompleteProfile?: boolean }): Promise<CurrentUser> {
   const u = await getCurrentUser();
   if (!u) redirect("/login");
+  if (!opts?.allowIncompleteProfile && needsOnboarding(u)) redirect("/onboarding");
   if (roles && !roles.includes(u.profile.role)) redirect("/");
   return u;
 }

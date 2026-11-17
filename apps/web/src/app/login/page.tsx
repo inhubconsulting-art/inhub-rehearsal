@@ -1,7 +1,8 @@
 "use client";
 /**
  * ===== 쉬운 설명 =====
- * 무엇: 로그인·회원가입·비밀번호 찾기 화면. 가입 시 이름과 소속(선택)을 받습니다.
+ * 무엇: 로그인·회원가입·비밀번호 찾기 화면. 가입 시 이름·이메일·비밀번호만 받고,
+ *      소속·업종·직무·경력은 가입 직후 '프로필 완성' 화면(/onboarding)에서 받습니다(Google 가입자와 같은 흐름).
  * 언제: 처음 접속하거나 로그아웃 상태일 때.
  * 리뷰 포인트:
  *  - 가입 이메일은 형식 검사를 하고, 흔한 오타(gmial.com 등)는 고친 주소를 제안합니다.
@@ -50,7 +51,6 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [name, setName] = useState("");
-  const [organization, setOrganization] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(notice);
@@ -128,7 +128,7 @@ function LoginForm() {
           email: emailTrim,
           password,
           options: {
-            data: { name: name.trim(), organization: organization.trim() || null },
+            data: { name: name.trim() },
             emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
           },
         });
@@ -210,9 +210,6 @@ function LoginForm() {
           <>
             <Field label="이름">
               <Input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" disabled={confirming} />
-            </Field>
-            <Field label="소속 (선택)">
-              <Input value={organization} onChange={(e) => setOrganization(e.target.value)} disabled={confirming} />
             </Field>
           </>
         )}

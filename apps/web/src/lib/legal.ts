@@ -12,22 +12,23 @@
 /** 서비스를 운영하는 회사 정보 */
 export const OPERATOR = {
   /** 운영 주체(회사) 이름 */
-  name: "【운영 주체명】",
+  name: "인허브",
   /** 대표자 이름 (사업자 정보를 표시하지 않으려면 빈 문자열 "") */
-  ceo: "",
+  ceo: "조수연",
   /** 사업자등록번호 (표시하지 않으려면 "") */
   businessNumber: "",
   /** 주소 (표시하지 않으려면 "") */
-  address: "",
+  address: "서울특별시 마포구 양화로 136",
   /** 문의 이메일 */
-  contactEmail: "【문의 이메일】",
+  contactEmail: "pino@inhub.co.kr",
 };
 
 /** 개인정보 보호책임자 */
 export const PRIVACY_OFFICER = {
-  name: "【보호책임자 이름】",
-  position: "【직책】",
-  email: "【보호책임자 이메일】",
+  name: "김도연",
+  /** 직책 (비워 두면 표시하지 않음) */
+  position: "",
+  email: "pino@inhub.co.kr",
 };
 
 /** 탈퇴하지 않은 사용자의 기록을 보관하는 기간 (문장으로) */
@@ -48,7 +49,7 @@ export const PROCESSORS = [
     company: "Supabase, Inc.",
     country: "대한민국(서울 데이터센터) · 운영사 소재지 미국",
     task: "회원 정보·실습 기록 저장, 로그인 처리",
-    items: "이름, 이메일, 소속, 비밀번호(암호화), 대화 기록, 평가 결과",
+    items: "이름, 이메일, 소속·부서·업종·직무·경력, 비밀번호(암호화), 대화 기록, 평가 결과",
     contact: "privacy@supabase.io",
   },
   {

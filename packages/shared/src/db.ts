@@ -19,6 +19,20 @@ export interface ProfileRow {
   email: string | null;
   role: Role;
   created_at: string;
+  /** 부서 (선택) */
+  department: string | null;
+  /** 업종 id (profile.ts 의 PROFILE_INDUSTRIES) */
+  industry: string | null;
+  /** 직무 대분류 id (JOB_CATEGORIES) */
+  job_category: string | null;
+  /** 세부 직무 id */
+  job_id: string | null;
+  /** '기타 (직접 입력)'일 때 직접 쓴 직무명 */
+  job_custom: string | null;
+  /** 경력 id (CAREER_BANDS) */
+  career: string | null;
+  /** 프로필 완성 시각. 비어 있으면 첫 로그인 후 '프로필 완성' 화면으로 안내 */
+  profile_completed_at: string | null;
 }
 
 export interface ScenarioRow {
@@ -76,6 +90,8 @@ export interface EnrollmentRow {
   joined_at: string;
   last_seen_at: string | null;
   consent_at: string;
+  /** 입장 당시 프로필 사본 (ProfileSnapshot). 이 기능 전에 입장한 경우 비어 있음 */
+  profile_snapshot: unknown | null;
 }
 
 export interface SessionRow {
