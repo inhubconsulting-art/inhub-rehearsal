@@ -30,7 +30,8 @@ export default async function InstructorHome({ searchParams }: { searchParams: P
   let q = adminClient()
     .from("cohorts")
     .select("*, enrollments(count), profiles:instructor_id(name)")
-    .or("client_name.is.null,client_name.neq.__preview__")
+    // 미리보기·개인 연습 전용 차수는 강사 목록에서 숨김
+    .or("client_name.is.null,client_name.not.in.(__preview__,__practice__)")
     .order("created_at", { ascending: false });
   if (u.profile.role !== "admin") q = q.eq("instructor_id", u.id);
   const { data } = await q;

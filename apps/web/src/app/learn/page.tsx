@@ -43,7 +43,8 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
     .order("joined_at", { ascending: false });
   const cohorts = ((enrollRows ?? []) as unknown as { cohorts: CohortRow }[])
     .map((r) => r.cohorts)
-    .filter((c) => c && c.client_name !== "__preview__");
+    // 미리보기·개인 연습 전용 차수는 '내 교육'에서 빼고, 개인 연습은 '연습하기'에서 봄
+    .filter((c) => c && c.client_name !== "__preview__" && c.client_name !== "__practice__");
 
   // 쉬운 설명: QR/링크로 들어와 주소에 입장 코드가 있는 경우
   //  - 이미 참여한 교육의 코드면 그 교육을 바로 보여 주고,

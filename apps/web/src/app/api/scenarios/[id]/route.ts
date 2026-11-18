@@ -41,18 +41,30 @@ export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }
   }
 }
 
-const Patch = z.object({ status: z.enum(["draft", "published", "archived"]) });
+const Patch = z
+  .object({
+    status: z.enum(["draft", "published", "archived"]).optional(),
+    /** '연습하기'(개인 연습)에 보여줄지 */
+    practicePublic: z.boolean().optional(),
+  })
+  .refine((v) => v.status !== undefined || v.practicePublic !== undefined);
 
-/** 공개/초안/보관 상태 변경 */
+/** 공개/초안/보관 상태 변경, 개인 연습 공개 켜기·끄기 */
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
     const u = await requireApiUser(["admin"]);
     const b = Patch.safeParse(await req.json());
     if (!b.success) throw new HttpError(400, "상태값이 올바르지 않습니다.");
-    const { error } = await adminClient().from("scenarios").update({ status: b.data.status }).eq("id", id);
-    if (error) throw error;
-    await audit(u.id, "scenario_status", id, b.data);
+    const patch: Record<string, unknown> = {};
+    if (b.data.status !== undefined) patch.status = b.data.status;
+    if (b.data.practicePublic !== undefined) patch.practice_public = b.data.practicePublic;
+    const { error } = await adminClient().from("scenarios").update(patch).eq("id", id);
+    if (error) {
+      if (/practice_public/.test(error.message)) throw new HttpError(409, "DB 업데이트(SQL 실행)가 필요합니다.");
+      throw error;
+    }
+    await audit(u.id, b.data.practicePublic !== undefined ? "scenario_practice" : "scenario_status", id, b.data);
     return Response.json({ ok: true });
   } catch (e) {
     return apiError(e);

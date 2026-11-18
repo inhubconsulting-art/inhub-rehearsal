@@ -27,6 +27,8 @@ export default async function LearnerReport({ params }: { params: Promise<{ sess
   if (!r) redirect("/learn");
   if (r.session.status === "active") redirect(`/learn/session/${sessionId}`);
   // 쉬운 설명: 이미 답한 👍/👎·현실감 점수가 있으면 그 상태로 보여 줌 (표가 아직 없으면 빈 값)
+  // 쉬운 설명: 개인 연습(이용권) 리포트면 '다시 연습'·'연습하기'로 연결
+  const isPractice = r.cohort.client_name === "__practice__";
   const fb = await loadSessionFeedback(u.id, sessionId).catch(() => ({ agree: null, realism: null }));
 
   return (
@@ -37,12 +39,18 @@ export default async function LearnerReport({ params }: { params: Promise<{ sess
         actions={
           <div className="no-print flex gap-2">
             {r.evaluation && <PrintButton />}
-            {r.cohort.status === "running" && (
-              <LinkButton href={`/learn/${r.cohort.id}/scenarios/${r.session.scenario_id}`} variant="secondary">
-                같은 시나리오 다시 도전
+            {isPractice ? (
+              <LinkButton href={`/practice/${r.session.scenario_id}`} variant="secondary">
+                같은 시나리오 다시 연습
               </LinkButton>
+            ) : (
+              r.cohort.status === "running" && (
+                <LinkButton href={`/learn/${r.cohort.id}/scenarios/${r.session.scenario_id}`} variant="secondary">
+                  같은 시나리오 다시 도전
+                </LinkButton>
+              )
             )}
-            <LinkButton href={`/learn?cohort=${r.cohort.id}`}>시나리오 목록</LinkButton>
+            <LinkButton href={isPractice ? "/practice" : `/learn?cohort=${r.cohort.id}`}>{isPractice ? "연습하기" : "시나리오 목록"}</LinkButton>
           </div>
         }
       />
