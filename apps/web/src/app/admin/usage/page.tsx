@@ -47,7 +47,12 @@ export default async function Usage() {
     const key = r.cohort_id;
     const cur = byCohort.get(key) ?? {
       title: r.cohorts?.title ?? "",
-      client: r.cohorts?.client_name === "__preview__" ? "(미리보기)" : r.cohorts?.client_name ?? "",
+      client:
+        r.cohorts?.client_name === "__preview__"
+          ? "(미리보기)"
+          : r.cohorts?.client_name === "__practice__"
+            ? "(개인 연습 · 이용권)"
+            : r.cohorts?.client_name ?? "",
       budget: r.cohorts?.budget_usd ?? null,
       sessions: 0,
       voiceMin: 0,

@@ -4,9 +4,11 @@
  * 무엇: 대화 방식(음성/텍스트) 선택, 마이크 점검, '고객 연결하기' 버튼.
  * 언제: 브리핑 화면 오른쪽.
  * 리뷰 포인트: 마이크 점검 안내 문구와 '먼저 인사해 주세요' 안내가 적절한지 확인하세요(PRD L-23).
+ *         개인 연습(practice)일 때는 '시작 · 이용권 1회 차감'으로 바뀌고, 남은 이용권이 없으면 이용권 화면으로 안내합니다.
  * =====================
  */
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ConversationMode } from "@inhub/shared";
 import { Button, ErrorText } from "@/components/ui";
@@ -18,12 +20,16 @@ export function StartScenario({
   allowedModes,
   channel,
   running,
+  practice,
 }: {
-  cohortId: string;
+  /** 개인 연습이면 비워 둠 */
+  cohortId?: string;
   scenarioId: string;
   allowedModes: ConversationMode[];
   channel: "phone" | "chat";
   running: boolean;
+  /** 개인 연습(이용권 차감)일 때: 남은 횟수 (DB 준비 전이면 null) */
+  practice?: { balance: number | null };
 }) {
   const router = useRouter();
   const preferred: ConversationMode = channel === "phone" && allowedModes.includes("voice") ? "voice" : allowedModes[0];
@@ -69,10 +75,10 @@ export function StartScenario({
     setBusy(true);
     setError(null);
     cleanup.current();
-    const res = await fetch("/api/sessions", {
+    const res = await fetch(practice ? "/api/practice/sessions" : "/api/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cohortId, scenarioId, mode }),
+      body: JSON.stringify(practice ? { scenarioId, mode } : { cohortId, scenarioId, mode }),
     });
     const json = await res.json();
     if (!res.ok) {
@@ -114,9 +120,23 @@ export function StartScenario({
       )}
 
       <ErrorText>{error}</ErrorText>
-      <Button size="lg" className="w-full" onClick={start} disabled={busy || !running}>
-        {!running ? "지금은 실습 시간이 아닙니다" : busy ? "연결 중…" : "고객 연결하기"}
-      </Button>
+      {practice ? (
+        <>
+          <Button size="lg" className="w-full" onClick={start} disabled={busy || practice.balance === 0 || practice.balance === null}>
+            {busy ? "연결 중…" : practice.balance === null ? "개인 연습 준비 중" : practice.balance === 0 ? "남은 이용권이 없어요" : "시작 · 이용권 1회 차감"}
+          </Button>
+          <p className="text-xs text-slate-500">
+            남은 이용권 <b className="text-slate-700">{practice.balance ?? "-"}회</b> · 중간에 끝내도 1회가 차감돼요.{" "}
+            <Link href="/pass" className="text-brand-600 underline">
+              이용권 보기
+            </Link>
+          </p>
+        </>
+      ) : (
+        <Button size="lg" className="w-full" onClick={start} disabled={busy || !running}>
+          {!running ? "지금은 실습 시간이 아닙니다" : busy ? "연결 중…" : "고객 연결하기"}
+        </Button>
+      )}
       <p className="text-xs text-slate-500">연결되면 상담원인 여러분이 먼저 인사해 주세요.</p>
     </div>
   );

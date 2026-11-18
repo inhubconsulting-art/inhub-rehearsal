@@ -45,6 +45,8 @@ export interface ScenarioRow {
   current_version: number;
   created_at: string;
   updated_at: string;
+  /** '연습하기'(개인 연습)에 보여줄지 (마이그레이션 전에는 없음) */
+  practice_public?: boolean;
 }
 
 export interface ScenarioVersionRow {
