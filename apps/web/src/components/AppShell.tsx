@@ -17,6 +17,7 @@ import { getPassBalance } from "@/lib/practice";
 import { LogoutButton } from "./LogoutButton";
 import { SideNav, type NavGroup } from "./SideNav";
 import { VisitTracker } from "./tracking/VisitTracker";
+import { LogoMark } from "@/components/LogoMark";
 
 const ROLE_LABEL = { learner: "수강생", instructor: "강사", admin: "운영 관리자" } as const;
 
@@ -80,7 +81,9 @@ export async function AppShell({ user, children, wide }: { user: CurrentUser; ch
       <aside className="no-print sticky top-0 z-20 flex flex-col gap-3 border-b border-slate-200 bg-white px-3 py-3 md:h-screen md:w-60 md:shrink-0 md:gap-3.5 md:overflow-y-auto md:border-b-0 md:border-r md:px-3.5 md:py-5">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 px-1.5">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-brand-500 text-[13px] font-extrabold text-white">IN</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">
+              <LogoMark className="h-6 w-6" />
+            </span>
             <span className="font-extrabold text-slate-900">인허브 리허설</span>
           </Link>
           {/* 휴대폰: 계정 링크를 위쪽에 */}

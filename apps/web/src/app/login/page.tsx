@@ -19,6 +19,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { track } from "@/lib/track";
 import { LoginShowcase } from "@/components/LoginShowcase";
+import { LogoMark } from "@/components/LogoMark";
 import { isValidEmail, suggestEmailFix } from "@/lib/email";
 import { Button, Card, ErrorText, Field, Input } from "@/components/ui";
 
@@ -175,6 +176,7 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-sm xl:border-0 xl:shadow-none">
       <div className="mb-6 text-center">
+        <LogoMark className="mx-auto mb-2 h-12 w-12 text-brand-500" />
         <div className="text-2xl font-bold text-brand-600">인허브 리허설</div>
         <p className="mt-1 text-sm text-slate-500">AI 고객과 함께하는 CS 응대 실습</p>
       </div>

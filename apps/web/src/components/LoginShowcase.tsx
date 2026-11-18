@@ -13,6 +13,7 @@
  */
 import { useEffect, useState } from "react";
 import clsx from "clsx";
+import { LogoMark } from "@/components/LogoMark";
 
 type Art = "chat" | "voice" | "report" | "path";
 const SLIDES: { image: string; title: string; desc: string; art: Art }[] = [
@@ -91,7 +92,7 @@ export function LoginShowcase({ className }: { className?: string }) {
       })}
 
       <div className="absolute left-10 top-10 flex items-center gap-2 rounded-2xl border border-white/30 bg-white/15 px-3 py-2 text-white backdrop-blur-xl">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 text-sm font-extrabold backdrop-blur">IN</span>
+        <LogoMark className="h-8 w-8 text-white" />
         <span className="text-lg font-extrabold">인허브 리허설</span>
       </div>
 
