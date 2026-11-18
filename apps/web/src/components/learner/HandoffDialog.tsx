@@ -16,15 +16,18 @@ const CUSTOM = "__custom__";
 export function HandoffDialog({
   sessionId,
   targets,
+  initialTarget,
   onClose,
   onDone,
 }: {
   sessionId: string;
   targets: string[];
+  /** 브리핑의 [연결]로 열었을 때 미리 고를 대상 */
+  initialTarget?: string;
   onClose: () => void;
   onDone: () => void;
 }) {
-  const [target, setTarget] = useState(targets[0] ?? CUSTOM);
+  const [target, setTarget] = useState(initialTarget && targets.includes(initialTarget) ? initialTarget : (targets[0] ?? CUSTOM));
   const [customTarget, setCustomTarget] = useState("");
   const [memo, setMemo] = useState("");
   const [error, setError] = useState<string | null>(null);
