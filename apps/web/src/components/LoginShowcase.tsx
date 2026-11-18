@@ -5,7 +5,8 @@
  *      장면마다 사진(public/login/slide-1.jpg …)을 쓰고, 사진 파일이 없거나 열리지 않으면 서비스 화면을 본뜬 그림으로 대신 보여 줍니다.
  * 언제: 로그인·회원가입 화면 (넓은 화면에서만, 휴대폰에서는 숨김).
  * 리뷰 포인트:
- *  - 사진 바꾸는 법: apps/web/public/login/ 에 slide-1.jpg ~ slide-4.jpg 를 넣으면 됩니다(가로 1600px 이상 권장). 문구는 아래 SLIDES 에서 고칩니다.
+ *  - 사진 바꾸는 법: apps/web/public/login/ 에 slide-1.jpg ~ slide-4.jpg 를 넣으면 됩니다. 지금 사진은 색감을 맞춘(파란 톤·살짝 흐림·입자감)
+ *    버전이고, 새 사진도 같은 처리를 하려면 README 안내를 보세요. 문구는 아래 SLIDES 에서 고칩니다.
  *  - 사진은 사용 허락(라이선스)을 확인한 것만 넣으세요. 모델이 나오는 유료 스톡 사진은 구매 라이선스가 필요합니다.
  *  - 움직임 줄이기 설정을 켠 사용자에게는 자동으로 넘기지 않습니다. 마우스를 올리면 잠시 멈춥니다.
  * =====================
@@ -18,7 +19,7 @@ const SLIDES: { image: string; title: string; desc: string; art: Art }[] = [
   { image: "/login/slide-1.jpg", art: "chat", title: "실제 고객처럼 반응하는 AI 고객", desc: "말투와 태도에 바로 반응하고, 상황마다 다른 고객을 만나요. 실전 같은 응대를 미리 연습하세요." },
   { image: "/login/slide-2.jpg", art: "voice", title: "헤드셋을 끼고, 전화하듯 음성으로", desc: "실제 통화처럼 말하고 들으며 연습해요. 머뭇거려도 고객이 기다려 줘요." },
   { image: "/login/slide-3.jpg", art: "report", title: "끝나면 바로 코칭 리포트", desc: "역량별 점수, 빠뜨린 안내, '이렇게 말해 보세요'까지. 무엇을 고칠지 바로 보여요." },
-  { image: "/login/slide-4.jpg", art: "path", title: "교육 과정도, 혼자 연습도 한곳에서", desc: "강사님의 교육 과정은 입장 코드로, 혼자 하는 연습은 이용권으로 언제든지." },
+  { image: "/login/slide-4.jpg", art: "path", title: "병원·통신·금융, 업종별 실제 상황 그대로", desc: "내 업종과 직무에 맞는 고객을 만나요. 강사님의 교육 과정으로, 혼자 연습은 이용권으로 언제든지." },
 ];
 const INTERVAL_MS = 5500;
 
@@ -73,26 +74,28 @@ export function LoginShowcase({ className }: { className?: string }) {
               />
             )}
             {showPhoto ? (
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-slate-950/10" />
+              // 사진 위에 브랜드 색을 얇게 덮어 장면마다 색감을 맞춤
+              <div className="absolute inset-0 bg-gradient-to-br from-[#2f6fed]/25 via-transparent to-slate-950/45" />
             ) : (
               <div className="absolute inset-x-0 top-[14%] flex justify-center px-12">
                 <ArtFor art={s.art} />
               </div>
             )}
-            <div className="absolute inset-x-0 bottom-0 p-12 text-white">
-              <p className="max-w-xl text-3xl font-extrabold leading-snug tracking-tight">{s.title}</p>
-              <p className="mt-3 max-w-lg text-base leading-relaxed text-white/85">{s.desc}</p>
+            {/* 문구: 반투명 유리 카드(글래스모피즘) */}
+            <div className="absolute inset-x-10 bottom-24 max-w-xl rounded-3xl border border-white/30 bg-white/15 p-7 text-white shadow-2xl shadow-slate-950/20 backdrop-blur-xl">
+              <p className="text-[28px] font-extrabold leading-snug tracking-tight [text-shadow:0_1px_12px_rgba(15,23,42,0.35)]">{s.title}</p>
+              <p className="mt-2.5 text-[15px] leading-relaxed text-white/90">{s.desc}</p>
             </div>
           </div>
         );
       })}
 
-      <div className="absolute left-12 top-10 flex items-center gap-2 text-white">
+      <div className="absolute left-10 top-10 flex items-center gap-2 rounded-2xl border border-white/30 bg-white/15 px-3 py-2 text-white backdrop-blur-xl">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 text-sm font-extrabold backdrop-blur">IN</span>
         <span className="text-lg font-extrabold">인허브 리허설</span>
       </div>
 
-      <div className="absolute bottom-12 right-12 flex gap-2">
+      <div className="absolute bottom-10 left-10 flex gap-2">
         {SLIDES.map((s, i) => (
           <button
             key={s.image}

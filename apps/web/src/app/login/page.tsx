@@ -173,7 +173,7 @@ function LoginForm() {
           : "가입하고 시작하기";
 
   return (
-    <Card className="w-full max-w-sm lg:border-0 lg:shadow-none">
+    <Card className="w-full max-w-sm xl:border-0 xl:shadow-none">
       <div className="mb-6 text-center">
         <div className="text-2xl font-bold text-brand-600">인허브 리허설</div>
         <p className="mt-1 text-sm text-slate-500">AI 고객과 함께하는 CS 응대 실습</p>
@@ -333,9 +333,9 @@ function AgreeNotice({ action }: { action: string }) {
 export default function LoginPage() {
   // 쉬운 설명: 넓은 화면은 왼쪽에 서비스 소개 슬라이드, 오른쪽에 로그인 창. 휴대폰은 로그인 창만.
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(440px,36%)]">
-      <LoginShowcase className="hidden lg:block" />
-      <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10 lg:border-l lg:border-slate-200">
+    <div className="min-h-screen xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(440px,36%)]">
+      <LoginShowcase className="hidden xl:block" />
+      <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10 xl:border-l xl:border-slate-200">
         <Suspense>
           <LoginForm />
         </Suspense>
