@@ -27,7 +27,7 @@ import { JoinForm } from "@/components/learner/JoinForm";
 const STATUS_LABEL = { ready: "실습 대기", running: "실습 중", paused: "일시정지", ended: "종료" } as const;
 const STATUS_TONE = { ready: "amber", running: "green", paused: "amber", ended: "slate" } as const;
 
-export default async function LearnHome({ searchParams }: { searchParams: Promise<{ cohort?: string; code?: string }> }) {
+export default async function LearnHome({ searchParams }: { searchParams: Promise<{ cohort?: string; code?: string; src?: string }> }) {
   const u = await requirePageUser();
   const sp = await searchParams;
   // 쉬운 설명: 입장 칸 위에 보여 줄 '내 정보' 한 줄 (입장할 때 이 정보가 함께 기록됨)
@@ -56,6 +56,8 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
   }
   const joinedByCode = codeCohortId ? cohorts.find((c) => c.id === codeCohortId) : undefined;
   const pendingCode = code && !joinedByCode ? code : "";
+  // 쉬운 설명: QR(src=qr)·공유 주소(src=link)로 들어왔는지. 코드를 직접 입력하면 'code'로 기록됩니다.
+  const entrySource = sp.src === "qr" || sp.src === "link" ? sp.src : undefined;
 
   const current =
     joinedByCode ??
@@ -69,7 +71,7 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
       <AppShell user={u}>
         <PageHeader title="실습 참여" description="강사님이 알려준 입장 코드를 입력하세요." />
         <Card>
-          <JoinForm initialCode={sp.code ?? ""} profileSummary={profileSummary} />
+          <JoinForm initialCode={sp.code ?? ""} entrySource={sp.code ? entrySource : undefined} profileSummary={profileSummary} />
         </Card>
       </AppShell>
     );
@@ -94,7 +96,7 @@ export default async function LearnHome({ searchParams }: { searchParams: Promis
         <Card className="mb-6 border-brand-200 bg-brand-50/60">
           <CardTitle>새 교육에 입장하기</CardTitle>
           <p className="mb-3 text-sm text-slate-600">QR로 받은 입장 코드가 입력되어 있어요. 동의에 체크하고 참여하기를 눌러 주세요.</p>
-          <JoinForm initialCode={pendingCode} profileSummary={profileSummary} />
+          <JoinForm initialCode={pendingCode} entrySource={entrySource} profileSummary={profileSummary} />
         </Card>
       )}
       <PageHeader

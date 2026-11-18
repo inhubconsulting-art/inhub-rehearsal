@@ -25,8 +25,10 @@ export default async function CohortPage({ params }: { params: Promise<{ id: str
   const h = await headers();
   const proto = h.get("x-forwarded-proto") ?? "https";
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const joinUrl = `${proto}://${host}/learn?code=${d.cohort.join_code}`;
-  const qrDataUrl = await QRCode.toDataURL(joinUrl, { margin: 1, width: 320 });
+  // 쉬운 설명: QR과 화면에 적힌 주소에 서로 다른 표시(src)를 붙여, 수강생이 어느 쪽으로 들어왔는지 구분합니다.
+  const baseJoinUrl = `${proto}://${host}/learn?code=${d.cohort.join_code}`;
+  const joinUrl = `${baseJoinUrl}&src=link`;
+  const qrDataUrl = await QRCode.toDataURL(`${baseJoinUrl}&src=qr`, { margin: 1, width: 320 });
 
   return (
     <AppShell user={u} wide>

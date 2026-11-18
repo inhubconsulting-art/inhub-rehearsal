@@ -3,12 +3,14 @@
  * 무엇: 음성 통화 기록 담당. 진행 중인 음성 통화에 옆에서 붙어 수강생·고객 발화를 순서대로 저장하고, 고객 감정을 판단하고,
  *     시간·턴 제한이나 고객의 대화 종료 시 통화를 끊습니다.
  * 언제: 음성 대화가 진행되는 동안.
+ *     또 수강생이 말한 구간(시작·끝 시각, AI가 말하는 도중이었는지)을 숫자로만 모아 두었다가 통화가 끝나면 저장합니다
+ *     (녹음은 저장하지 않음 → 말한 시간·말 속도·끼어들기 분석용).
  * 리뷰 포인트: 음성 대화의 규칙(제한 시간 + 15초 여유, 고객이 끝낼 때 5초 기다렸다 끊기, 10분간 아무 말 없으면 '중단'으로
  *         정리)이 운영 기준과 맞는지 확인하세요.
  * =====================
  */
 import WebSocket from "ws";
-import type { CohortRow, ScenarioContent, SessionRow } from "@inhub/shared";
+import { EVENT_TYPES, type CohortRow, type ScenarioContent, type SessionRow, type VoiceSegment } from "@inhub/shared";
 import {
   addUsage,
   appendMessage,
@@ -37,6 +39,12 @@ class SidebandSession {
   private emotion: number;
   private timeLimitTimer: NodeJS.Timeout | null = null;
   private endTimer: NodeJS.Timeout | null = null;
+  /** 수강생이 말한 구간 (오디오 시작 기준 밀리초) */
+  private segments: VoiceSegment[] = [];
+  private openSegment: { start_ms: number; during_ai: boolean } | null = null;
+  /** 지금 AI 고객이 답을 만들고 있는 중인지 (끼어들기 판단용) */
+  private aiResponding = false;
+  private segmentsSaving: Promise<void> | null = null;
 
   constructor(
     readonly session: SessionRow,
@@ -76,6 +84,25 @@ class SidebandSession {
   private dispose() {
     if (this.timeLimitTimer) clearTimeout(this.timeLimitTimer);
     if (this.endTimer) clearTimeout(this.endTimer);
+    void this.saveSegments();
+  }
+
+  /** 이번 연결 동안 모은 발화 구간을 한 줄로 저장 (한 번만, 두 번째 호출은 첫 저장이 끝나기를 기다림). 실패해도 통화에는 영향 없음 */
+  private saveSegments() {
+    this.segmentsSaving ??= this.writeSegments().catch((e) => log(this.session.id, "voice segments not saved", String(e)));
+    return this.segmentsSaving;
+  }
+
+  private async writeSegments() {
+    if (!this.segments.length) return;
+    const { error } = await db.from("learner_events").insert({
+      user_id: this.session.user_id,
+      session_id: this.session.id,
+      cohort_id: this.session.cohort_id,
+      type: EVENT_TYPES.voice_segments,
+      props: { call_id: this.callId, segments: this.segments },
+    });
+    if (error) log(this.session.id, "voice segments not saved", error.message);
   }
 
   /** DB 쓰기는 도착 순서대로 직렬 처리 */
@@ -93,6 +120,20 @@ class SidebandSession {
       return;
     }
     switch (ev.type) {
+      // 쉬운 설명: 수강생이 말을 시작하고 끝낸 시각만 기록합니다 (말한 시간·끼어들기 분석용).
+      case "input_audio_buffer.speech_started":
+        if (typeof ev.audio_start_ms === "number") this.openSegment = { start_ms: ev.audio_start_ms, during_ai: this.aiResponding };
+        break;
+      case "input_audio_buffer.speech_stopped":
+        if (this.openSegment && typeof ev.audio_end_ms === "number") {
+          this.segments.push({ ...this.openSegment, end_ms: ev.audio_end_ms });
+        }
+        this.openSegment = null;
+        break;
+      case "response.created":
+        this.aiResponding = true;
+        break;
+
       case "input_audio_buffer.committed":
         if (ev.item_id) this.pendingUserItems.add(ev.item_id);
         break;
@@ -136,6 +177,7 @@ class SidebandSession {
 
       // 쉬운 설명: AI가 한 번 말할 때마다 사용량(비용 계산용)을 누적합니다.
       case "response.done": {
+        this.aiResponding = false;
         const u = ev.response?.usage;
         if (u) {
           void addUsage(this.session.id, {
@@ -191,6 +233,8 @@ class SidebandSession {
     this.ended = true;
     this.dispose();
     await this.writeChain.catch(() => {});
+    // 평가·분석이 발화 구간을 쓸 수 있도록, 실습을 끝내기 전에 저장을 마칩니다.
+    await this.saveSegments().catch(() => {});
     try {
       await endSession(this.session.id, reason);
     } catch (e) {

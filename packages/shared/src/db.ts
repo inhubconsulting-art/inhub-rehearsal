@@ -92,6 +92,8 @@ export interface EnrollmentRow {
   consent_at: string;
   /** 입장 당시 프로필 사본 (ProfileSnapshot). 이 기능 전에 입장한 경우 비어 있음 */
   profile_snapshot: unknown | null;
+  /** 어떻게 들어왔는지: qr / link / code (이 기능 전에 입장한 경우 비어 있음) */
+  entry_source: "qr" | "link" | "code" | null;
 }
 
 export interface SessionRow {

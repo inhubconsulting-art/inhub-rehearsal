@@ -17,6 +17,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
+import { track } from "@/lib/track";
 import { isValidEmail, suggestEmailFix } from "@/lib/email";
 import { Button, Card, ErrorText, Field, Input } from "@/components/ui";
 
@@ -68,7 +69,8 @@ function LoginForm() {
     const { error } = await browserClient().auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        // via=google: 돌아왔을 때 'Google 로그인' 기록을 남기기 위한 표시
+        redirectTo: `${window.location.origin}/auth/callback?via=google&next=${encodeURIComponent(next)}`,
         // 여러 구글 계정을 쓰는 사람도 매번 계정을 고를 수 있게 합니다 (공용 PC 실습실 대비).
         queryParams: { prompt: "select_account" },
       },
@@ -147,6 +149,8 @@ function LoginForm() {
           return;
         }
       }
+      // 쉬운 설명: 로그인(또는 가입 직후 자동 로그인) 기록 — 실패해도 이동에는 영향 없음
+      void track({ type: "login", props: { method: "email" } });
       router.replace(next);
       router.refresh();
     } catch (err) {

@@ -174,7 +174,7 @@ export function ReportView({
       )}
 
       <Card>
-        <details>
+        <details data-track="transcript">
           <summary className="cursor-pointer font-semibold">대화 전문 ({r.messages.length}개 발화)</summary>
           <div className="mt-4 space-y-2 text-sm">
             {r.messages.map((m) => (
