@@ -41,7 +41,11 @@ export async function evaluateSession(sessionId: string) {
 
   const content = await loadScenarioContent(session.scenario_id, session.scenario_version);
   const lines = messages.map((m) => ({ seq: m.seq, role: m.role, content: m.content }));
-  const basePrompt = buildEvaluationPrompt(content, lines, session.mode);
+  // 쉬운 설명: 대화가 어떻게 끝났는지(연결·이관 포함)와 인계 메모도 함께 넘겨 평가에 반영합니다.
+  const basePrompt = buildEvaluationPrompt(content, lines, session.mode, {
+    endReason: session.end_reason,
+    handoff: session.handoff?.status === "done" ? session.handoff : null,
+  });
 
   let result: EvaluationResult | null = null;
   let feedback = "";

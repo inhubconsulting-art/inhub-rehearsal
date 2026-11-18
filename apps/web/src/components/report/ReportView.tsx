@@ -1,7 +1,7 @@
 /**
  * ===== 쉬운 설명 =====
  * 무엇: 리포트 본문. 등급·점수, 역량별 점수, 필수 절차 체크리스트, 고객 감정 흐름, 잘한 점, 개선할 점(대체 문장 포함),
- *     다음 연습 추천, 강사 코멘트, 대화 전문 순서로 보여줍니다.
+ *     빠뜨리거나 틀린 안내, 연결·이관 평가(인계 메모 포함), 다음 연습 추천, 강사 코멘트, 대화 전문 순서로 보여줍니다.
  * 언제: 수강생 리포트, 강사의 대화 상세, 일괄 인쇄.
  * 리뷰 포인트: PRD 6.2 리포트 구성 7가지와 순서·문구가 맞는지 확인하세요. 수강생에게 점수까지 공개하기로 한 결정이 반영되어
  *         있습니다.
@@ -137,6 +137,44 @@ export function ReportView({
           ))}
         </div>
       </Card>
+
+      {(res.missedInfo ?? []).length > 0 && (
+        <Card>
+          <CardTitle>빠뜨리거나 틀린 안내</CardTitle>
+          <p className="mb-3 text-sm text-slate-500">고객이 되묻지 않았더라도 꼭 안내했어야 하는 내용이에요. 실제 고객은 모르고 지나가기 쉬워요.</p>
+          <div className="space-y-3">
+            {res.missedInfo.map((m, i) => (
+              <div key={i} className="rounded-lg border-l-4 border-rose-400 bg-rose-50/60 px-4 py-3">
+                <p className="font-medium">
+                  <Badge tone={m.kind === "wrong" ? "rose" : "amber"}>{m.kind === "wrong" ? "틀림" : "빠뜨림"}</Badge> {m.item}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">{m.impact}</p>
+                <p className="mt-2 rounded-md bg-white px-3 py-2 text-sm">
+                  <span className="font-semibold text-brand-600">이렇게 안내해 보세요 · </span>
+                  {m.howToSay}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {res.handoffReview && (res.handoffReview.needed || res.handoffReview.done || r.session.handoff?.status === "done") && (
+        <Card>
+          <CardTitle>연결·이관</CardTitle>
+          <div className="mb-2 flex flex-wrap gap-2 text-sm">
+            <Badge tone={res.handoffReview.needed ? "amber" : "slate"}>{res.handoffReview.needed ? "연결이 필요한 상황" : "연결 필요 없음"}</Badge>
+            <Badge tone={res.handoffReview.done ? "green" : "rose"}>{res.handoffReview.done ? "연결함" : "연결하지 않음"}</Badge>
+          </div>
+          {res.handoffReview.comment && <p>{res.handoffReview.comment}</p>}
+          {r.session.handoff?.status === "done" && (
+            <div className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm">
+              <p className="text-xs text-slate-500">연결한 곳: {r.session.handoff.target}</p>
+              <p className="mt-1 whitespace-pre-wrap">{r.session.handoff.memo}</p>
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card>
         <CardTitle>다음 연습 추천</CardTitle>

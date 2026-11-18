@@ -3,12 +3,14 @@
  * 무엇: 텍스트 대화 한 턴을 처리하는 서버 창구. 수강생 메시지 저장 → AI 고객 답변을 글자 단위로 흘려보냄 → 답변 저장 →
  *     고객 감정·종료 판단 → 필요하면 대화 종료.
  * 언제: 텍스트 모드에서 수강생이 메시지를 보낼 때마다.
- * 리뷰 포인트: 흐름을 위에서 아래로 따라 읽어 보세요. 시간 초과, 턴 수 초과, 고객이 만족/화나서 대화를 끝내는 경우가 모두 처리되는지
- *         확인하세요.
+ * 리뷰 포인트: 흐름을 위에서 아래로 따라 읽어 보세요. 종료 규칙은 packages/shared/src/flow.ts 한 곳에 있습니다
+ *         (고객 마무리 인사, 상담원 마무리 인사, 용건 해결 후 마무리 신호·자동 종료, 연결 대기, 턴 수 초과).
+ *         마무리 신호가 시작된 뒤에는 AI 고객 지시문 끝에 '이제 인사하고 끝내세요'를 붙입니다.
  * =====================
  */
 import { z } from "zod";
-import { buildCustomerInstructions, type TranscriptLine } from "@inhub/shared";
+import { buildCustomerInstructions, decideTurnOutcome, WRAP_UP_DIRECTIVE, type TranscriptLine } from "@inhub/shared";
+import { adminClient } from "@/lib/supabase/admin";
 import { apiError, audit, HttpError, requireApiUser } from "@/lib/auth";
 import {
   addUsage,
@@ -32,7 +34,7 @@ const Body = z.object({ content: z.string().trim().min(1).max(2000) });
  * 텍스트 대화 한 턴. 응답은 NDJSON 스트림:
  *  {"t":"delta","v":"..."}  고객 답변 조각
  *  {"t":"done","seq":n}     고객 발화 저장 완료
- *  {"t":"state","emotion":n,"ended":bool,"endReason":string|null}
+ *  {"t":"state","emotion":n,"ended":bool,"endReason":string|null,"handoffPending":bool}
  *  {"t":"error","message":"..."}
  */
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -71,9 +73,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       role: m.role === "learner" ? ("user" as const) : ("assistant" as const),
       content: m.content,
     }));
-    const instructions = buildCustomerInstructions(content, "text");
-    // 쉬운 설명: 수강생 발화 수가 최대 턴 수에 닿았는지 미리 계산해 둡니다.
-    const turnLimitReached = history.filter((m) => m.role === "learner").length >= content.maxTurns;
+    // 쉬운 설명: 고객 용건이 이미 다 처리됐으면(마무리 신호 중) 지시문 끝에 '인사하고 끝내세요'를 붙입니다.
+    const instructions = buildCustomerInstructions(content, "text") + (session.resolved_at ? `\n\n${WRAP_UP_DIRECTIVE}` : "");
+    const learnerTurns = history.filter((m) => m.role === "learner").length;
+    const learnerTurnsSinceWrapUp = session.resolved_at
+      ? history.filter((m) => m.role === "learner" && Date.parse(m.created_at) > Date.parse(session.resolved_at!)).length
+      : 0;
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
@@ -121,12 +126,34 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
             text_output_tokens: (usage.text_output_tokens ?? 0) + (cUsage.text_output_tokens ?? 0),
           });
 
-          // 쉬운 설명: 5단계: 고객이 만족해서/화나서 끝내거나, 턴 수를 넘으면 대화를 종료합니다.
-          let endReason: string | null = null;
-          if (state.endConversation) endReason = state.resolved ? "resolved" : "customer_left";
-          else if (turnLimitReached) endReason = "turn_limit";
-          if (endReason) await endSession(session, endReason);
-          send({ t: "state", emotion: state.emotion, ended: Boolean(endReason), endReason });
+          // 쉬운 설명: 5단계: 종료 규칙(flow.ts)으로 끝낼지·마무리 신호를 줄지·연결 대기로 둘지 정합니다.
+          const outcome = decideTurnOutcome({
+            state,
+            resolvedAt: session.resolved_at,
+            learnerTurnsSinceWrapUp,
+            learnerTurns,
+            maxTurns: content.maxTurns,
+            handoffStatus: session.handoff?.status,
+          });
+          // DB 칸이 아직 없으면(SQL 실행 전) 기록만 건너뛰고 대화는 계속합니다.
+          if (outcome.startWrapUp) {
+            await adminClient().from("sessions").update({ resolved_at: new Date().toISOString() }).eq("id", session.id).then(() => {}, () => {});
+          }
+          if (outcome.handoffPending) {
+            await adminClient()
+              .from("sessions")
+              .update({ handoff: { status: "pending", at: new Date().toISOString() } })
+              .eq("id", session.id)
+              .then(() => {}, () => {});
+          }
+          if (outcome.endReason) await endSession(session, outcome.endReason);
+          send({
+            t: "state",
+            emotion: state.emotion,
+            ended: Boolean(outcome.endReason),
+            endReason: outcome.endReason,
+            handoffPending: outcome.handoffPending || session.handoff?.status === "pending",
+          });
         } catch (err) {
           console.error(err);
           send({ t: "error", message: "AI 고객 응답 중 오류가 발생했습니다. 다시 보내 주세요." });

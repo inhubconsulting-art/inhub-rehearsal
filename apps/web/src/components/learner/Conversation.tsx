@@ -4,7 +4,10 @@
  * 무엇: 수강생 대화 화면 본체. 위쪽에 남은 시간·브리핑·종료 버튼, 가운데 말풍선, 아래쪽에 채팅 입력창 또는 음성 통화 조작부가
  *     있습니다.
  * 언제: 대화하는 동안 내내.
- * 리뷰 포인트: 남은 1분 경고, 시간 종료 시 자동 종료, 대화가 끝나면 리포트로 이동(PRD L-25, L-30), 음성 실패 시
+ * 리뷰 포인트: 실제 상담 프로그램처럼 아래쪽 조작줄에 [↪ 연결·이관]과 [대화 종료]를 양 끝에 둡니다(위쪽은 정보만).
+ *         고객이 연결을 받아들이면 대화 말풍선 사이에 '연결·이관' 제안 카드가 뜨고, 브리핑의 '연결할 수 있는 곳' 옆
+ *         [연결] 버튼으로도 바로 열 수 있습니다.
+ *         남은 1분 경고, 시간 종료 시 자동 종료, 대화가 끝나면 리포트로 이동(PRD L-25, L-30), 음성 실패 시
  *         '텍스트로 전환'(L-23)이 있는지 확인하세요.
  * =====================
  */
@@ -15,6 +18,7 @@ import { browserClient } from "@/lib/supabase/client";
 import { Button, ErrorText, Textarea } from "@/components/ui";
 import { EmotionMeter } from "@/components/EmotionMeter";
 import { BriefingCard } from "./BriefingCard";
+import { HandoffDialog } from "./HandoffDialog";
 import { useVoiceCall } from "./useVoiceCall";
 import { uniqueTopic } from "@/lib/realtime";
 
@@ -44,6 +48,16 @@ export function Conversation(props: {
   const [error, setError] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
   const [showBriefing, setShowBriefing] = useState(true);
+  const [showHandoff, setShowHandoff] = useState(false);
+  /** 브리핑의 [연결]로 열면 그 대상을 미리 선택 */
+  const [handoffTarget, setHandoffTarget] = useState<string | undefined>(undefined);
+  const handoffTargets = view.briefing.handoffTargets ?? [];
+  const openHandoff = (target?: string) => {
+    setHandoffTarget(target);
+    setShowHandoff(true);
+  };
+  // 쉬운 설명: 고객이 연결을 받아들이고 기다리는 중이면 안내 띠를 띄웁니다.
+  const [handoffPending, setHandoffPending] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
   const endedRef = useRef(false);
@@ -65,8 +79,9 @@ export function Conversation(props: {
     const ch = supabase
       .channel(uniqueTopic(`session:${sessionId}`))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (p) => {
-        const row = p.new as { status: string; current_emotion: number | null; mode: ConversationMode };
+        const row = p.new as { status: string; current_emotion: number | null; mode: ConversationMode; handoff?: { status?: string } | null };
         if (row.current_emotion != null) setEmotion(row.current_emotion);
+        if (row.handoff?.status === "pending") setHandoffPending(true);
         if (row.status !== "active") goReport();
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `session_id=eq.${sessionId}` }, (p) => {
@@ -108,7 +123,7 @@ export function Conversation(props: {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [lines, streaming]);
+  }, [lines, streaming, handoffPending]);
 
   // ───── 텍스트 모드 ─────
   // 쉬운 설명: 텍스트 모드: 메시지를 보내고, AI 답변이 글자 단위로 도착하는 대로 말풍선에 보여줍니다.
@@ -156,6 +171,7 @@ export function Conversation(props: {
             setStreaming(null);
           } else if (msg.t === "state") {
             setEmotion(msg.emotion);
+            if (msg.handoffPending) setHandoffPending(true);
             // 쉬운 설명: 고객이 대화를 끝냈으면 2.5초 뒤(마지막 말을 읽을 시간) 리포트로 이동합니다.
             if (msg.ended) setTimeout(goReport, 2500);
           } else if (msg.t === "error") {
@@ -206,17 +222,19 @@ export function Conversation(props: {
         <Button variant="secondary" size="sm" onClick={() => setShowBriefing((v) => !v)}>
           {showBriefing ? "브리핑 닫기" : "브리핑 보기"}
         </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          disabled={ending}
-          onClick={() => {
-            if (confirm("대화를 종료하고 리포트를 받을까요?")) void end("learner_ended");
-          }}
-        >
-          대화 종료
-        </Button>
       </header>
+      {showHandoff && (
+        <HandoffDialog
+          sessionId={sessionId}
+          targets={handoffTargets}
+          initialTarget={handoffTarget}
+          onClose={() => setShowHandoff(false)}
+          onDone={() => {
+            setEnding(true);
+            goReport();
+          }}
+        />
+      )}
       {/* 쉬운 설명: 남은 시간 1분 경고 띠 */}
       {remaining <= 60 && remaining > 0 && (
         <div className="bg-rose-50 px-4 py-1.5 text-center text-sm text-rose-700">1분 뒤 대화가 자동으로 종료됩니다.</div>
@@ -238,6 +256,15 @@ export function Conversation(props: {
             {streaming !== null && <Bubble role="customer" text={streaming || "…"} pending />}
             {mode === "voice" && voice.liveCustomer && <Bubble role="customer" text={voice.liveCustomer} pending />}
             {mode === "voice" && voice.liveLearner && <Bubble role="learner" text={voice.liveLearner} pending />}
+            {/* 쉬운 설명: 고객이 연결을 받아들이면 대화 흐름 안에 '연결·이관' 제안 카드를 띄웁니다. */}
+            {handoffPending && !ending && (
+              <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <span>💡 고객이 연결을 받아들였어요. 인계 메모를 남기고 연결을 마치세요.</span>
+                <Button size="sm" onClick={() => openHandoff()}>
+                  ↪ 연결·이관
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="border-t border-slate-200 bg-white p-4">
@@ -264,13 +291,35 @@ export function Conversation(props: {
             ) : (
               <VoiceControls voice={voice} allowText={props.allowText} onSwitchToText={switchToText} />
             )}
+            {/* 쉬운 설명: 조작줄. 실제 상담 프로그램처럼 호전환(연결·이관)과 종료를 양 끝에 떨어뜨려 둡니다. */}
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={ending}
+                onClick={() => openHandoff()}
+                title="고객을 다른 담당자·부서로 넘길 때 (인계 메모 작성 후 실습 종료)"
+              >
+                ↪ 연결·이관{handoffTargets.length > 0 && <span className="ml-1 text-xs text-slate-500">({handoffTargets.length})</span>}
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={ending}
+                onClick={() => {
+                  if (confirm("대화를 종료하고 리포트를 받을까요?")) void end("learner_ended");
+                }}
+              >
+                ■ 대화 종료
+              </Button>
+            </div>
           </div>
         </div>
 
         {showBriefing && (
           <aside className="hidden w-80 shrink-0 space-y-5 overflow-y-auto border-l border-slate-200 bg-white p-4 md:block">
             {view.showEmotionToLearner && <EmotionMeter level={emotion} />}
-            <BriefingCard view={view} compact />
+            <BriefingCard view={view} compact onHandoff={ending ? undefined : openHandoff} />
           </aside>
         )}
       </div>

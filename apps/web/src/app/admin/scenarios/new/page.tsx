@@ -20,7 +20,7 @@ const BLANK: ScenarioContent = {
   timeLimitSec: 600,
   maxTurns: 25,
   showEmotionToLearner: false,
-  briefing: { summary: "", learnerGoal: "", customerProfile: "", facts: [], policies: [] },
+  briefing: { summary: "", learnerGoal: "", customerProfile: "", facts: [], policies: [], handoffTargets: [] },
   persona: {
     name: "",
     ageGroup: "",
@@ -40,6 +40,8 @@ const BLANK: ScenarioContent = {
       { id: "r3", competency: "problem_solving", title: "해결책 제시", description: "", weight: 1 },
     ],
     requiredSteps: [],
+    mustInform: [],
+    handoffExpected: "",
   },
   modelAnswers: [],
   voice: { voice: "marin", toneInstruction: "", waitForLearner: "patient" },

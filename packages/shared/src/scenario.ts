@@ -117,6 +117,8 @@ export const ScenarioContentSchema = z.object({
     customerProfile: z.string().min(1),
     facts: z.array(z.string()).default([]),
     policies: z.array(z.string()).default([]),
+    /** 이 상황에서 연결·이관할 수 있는 곳 (예: '간호사 상담실', '담당 부서 회신 예약'). 수강생에게 보임 */
+    handoffTargets: z.array(z.string()).default([]),
   }),
 
   /** AI 고객 페르소나 (수강생 비공개) */
@@ -148,6 +150,10 @@ export const ScenarioContentSchema = z.object({
   rubric: z.object({
     items: z.array(RubricItemSchema).min(1),
     requiredSteps: z.array(RequiredStepSchema).default([]),
+    /** 고객이 묻지 않아도 상담원이 반드시 안내해야 할 내용 (빠뜨리거나 틀리면 감점). 고객은 모름 */
+    mustInform: z.array(z.string()).default([]),
+    /** 연결·이관이 필요한 경우와 바른 이관 방법 (평가 기준, 비어 있으면 '필요 시 판단') */
+    handoffExpected: z.string().default(""),
   }),
 
   /** 모범 응대 예시 (평가 프롬프트에만 사용) */
