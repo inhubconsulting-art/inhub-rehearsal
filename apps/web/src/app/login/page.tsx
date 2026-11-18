@@ -333,7 +333,7 @@ function AgreeNotice({ action }: { action: string }) {
 export default function LoginPage() {
   // 쉬운 설명: 넓은 화면은 왼쪽에 서비스 소개 슬라이드, 오른쪽에 로그인 창. 휴대폰은 로그인 창만.
   return (
-    <div className="min-h-screen xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(440px,36%)]">
+    <div className="min-h-screen xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(400px,28%)]">
       <LoginShowcase className="hidden xl:block" />
       <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10 xl:border-l xl:border-slate-200">
         <Suspense>
