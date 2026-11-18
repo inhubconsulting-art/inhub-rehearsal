@@ -46,7 +46,7 @@ export async function classifyCustomerState(
   const parsed = res.output_parsed;
   const state: CustomerState = parsed
     ? { ...parsed, emotion: clampEmotion(parsed.emotion) }
-    : { emotion: prevEmotion, resolved: false, endConversation: false, reason: "판단 실패" };
+    : { emotion: prevEmotion, resolved: false, endConversation: false, learnerClosing: false, handoffAccepted: false, reason: "판단 실패" };
   return {
     state,
     usage: {

@@ -55,6 +55,27 @@ export const EvaluationResultSchema = z.object({
       note: z.string(),
     }),
   ),
+  /** 고객이 묻지 않았어도 안내했어야 하는데 빠뜨리거나 틀리게 안내한 내용 */
+  missedInfo: z.array(
+    z.object({
+      item: z.string(),
+      /** 빠뜨림 / 틀림 */
+      kind: z.enum(["missing", "wrong"]),
+      /** 이 때문에 고객에게 생길 수 있는 문제 */
+      impact: z.string(),
+      /** 이렇게 안내했어야 함 */
+      howToSay: z.string(),
+    }),
+  ),
+  /** 연결·이관 평가 */
+  handoffReview: z.object({
+    /** 이 대화에서 연결·이관(또는 회신 약속)이 필요했는가 */
+    needed: z.boolean(),
+    /** 실제로 연결·이관을 진행했는가 */
+    done: z.boolean(),
+    /** 이관 사유 설명, 대기 안내, 인계 메모의 충실도 등에 대한 한두 문장 (필요 없었고 하지도 않았으면 빈 문자열) */
+    comment: z.string(),
+  }),
   recommendation: z.object({
     competency: z.enum(COMPETENCIES),
     reason: z.string(),

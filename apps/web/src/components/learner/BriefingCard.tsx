@@ -46,6 +46,19 @@ export function BriefingCard({ view, compact }: { view: LearnerScenarioView; com
           </ul>
         </section>
       )}
+      {(b.handoffTargets ?? []).length > 0 && (
+        <section>
+          <h3 className="mb-1 text-sm font-semibold text-slate-500">연결·이관할 수 있는 곳</h3>
+          <ul className="list-disc space-y-0.5 pl-5">
+            {b.handoffTargets.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+          <p className="mt-1 text-xs text-slate-500">
+            직접 답하기 어려우면 고객에게 연결 이유와 대기 안내를 한 뒤 대화 화면의 &lsquo;연결·이관&rsquo; 버튼으로 넘기세요.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

@@ -4,7 +4,8 @@
  * 무엇: 수강생 대화 화면 본체. 위쪽에 남은 시간·브리핑·종료 버튼, 가운데 말풍선, 아래쪽에 채팅 입력창 또는 음성 통화 조작부가
  *     있습니다.
  * 언제: 대화하는 동안 내내.
- * 리뷰 포인트: 남은 1분 경고, 시간 종료 시 자동 종료, 대화가 끝나면 리포트로 이동(PRD L-25, L-30), 음성 실패 시
+ * 리뷰 포인트: '연결·이관' 버튼(다른 담당자로 넘기며 인계 메모 작성)과, 고객이 연결을 받아들였을 때 뜨는 안내 띠가 있습니다.
+ *         남은 1분 경고, 시간 종료 시 자동 종료, 대화가 끝나면 리포트로 이동(PRD L-25, L-30), 음성 실패 시
  *         '텍스트로 전환'(L-23)이 있는지 확인하세요.
  * =====================
  */
@@ -15,6 +16,7 @@ import { browserClient } from "@/lib/supabase/client";
 import { Button, ErrorText, Textarea } from "@/components/ui";
 import { EmotionMeter } from "@/components/EmotionMeter";
 import { BriefingCard } from "./BriefingCard";
+import { HandoffDialog } from "./HandoffDialog";
 import { useVoiceCall } from "./useVoiceCall";
 import { uniqueTopic } from "@/lib/realtime";
 
@@ -44,6 +46,9 @@ export function Conversation(props: {
   const [error, setError] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
   const [showBriefing, setShowBriefing] = useState(true);
+  const [showHandoff, setShowHandoff] = useState(false);
+  // 쉬운 설명: 고객이 연결을 받아들이고 기다리는 중이면 안내 띠를 띄웁니다.
+  const [handoffPending, setHandoffPending] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const scrollRef = useRef<HTMLDivElement>(null);
   const endedRef = useRef(false);
@@ -65,8 +70,9 @@ export function Conversation(props: {
     const ch = supabase
       .channel(uniqueTopic(`session:${sessionId}`))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (p) => {
-        const row = p.new as { status: string; current_emotion: number | null; mode: ConversationMode };
+        const row = p.new as { status: string; current_emotion: number | null; mode: ConversationMode; handoff?: { status?: string } | null };
         if (row.current_emotion != null) setEmotion(row.current_emotion);
+        if (row.handoff?.status === "pending") setHandoffPending(true);
         if (row.status !== "active") goReport();
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `session_id=eq.${sessionId}` }, (p) => {
@@ -156,6 +162,7 @@ export function Conversation(props: {
             setStreaming(null);
           } else if (msg.t === "state") {
             setEmotion(msg.emotion);
+            if (msg.handoffPending) setHandoffPending(true);
             // 쉬운 설명: 고객이 대화를 끝냈으면 2.5초 뒤(마지막 말을 읽을 시간) 리포트로 이동합니다.
             if (msg.ended) setTimeout(goReport, 2500);
           } else if (msg.t === "error") {
@@ -206,6 +213,9 @@ export function Conversation(props: {
         <Button variant="secondary" size="sm" onClick={() => setShowBriefing((v) => !v)}>
           {showBriefing ? "브리핑 닫기" : "브리핑 보기"}
         </Button>
+        <Button variant="secondary" size="sm" disabled={ending} onClick={() => setShowHandoff(true)}>
+          연결·이관
+        </Button>
         <Button
           variant="danger"
           size="sm"
@@ -217,6 +227,25 @@ export function Conversation(props: {
           대화 종료
         </Button>
       </header>
+      {handoffPending && !showHandoff && (
+        <div className="flex flex-wrap items-center justify-center gap-3 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          고객이 연결을 기다리고 있어요. 인계 메모를 남기고 연결을 마치세요.
+          <Button size="sm" onClick={() => setShowHandoff(true)} disabled={ending}>
+            연결·이관 진행
+          </Button>
+        </div>
+      )}
+      {showHandoff && (
+        <HandoffDialog
+          sessionId={sessionId}
+          targets={view.briefing.handoffTargets ?? []}
+          onClose={() => setShowHandoff(false)}
+          onDone={() => {
+            setEnding(true);
+            goReport();
+          }}
+        />
+      )}
       {/* 쉬운 설명: 남은 시간 1분 경고 띠 */}
       {remaining <= 60 && remaining > 0 && (
         <div className="bg-rose-50 px-4 py-1.5 text-center text-sm text-rose-700">1분 뒤 대화가 자동으로 종료됩니다.</div>

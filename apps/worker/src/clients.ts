@@ -105,7 +105,7 @@ export async function classifyCustomerState(
   return {
     state: p
       ? { ...p, emotion: clampEmotion(p.emotion) }
-      : { emotion: prevEmotion, resolved: false, endConversation: false, reason: "판단 실패" },
+      : { emotion: prevEmotion, resolved: false, endConversation: false, learnerClosing: false, handoffAccepted: false, reason: "판단 실패" },
     usage: { text_input_tokens: res.usage?.input_tokens ?? 0, text_output_tokens: res.usage?.output_tokens ?? 0 },
   };
 }

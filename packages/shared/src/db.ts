@@ -114,6 +114,18 @@ export interface SessionRow {
   openai_call_id: string | null;
   last_activity_at: string;
   usage: Record<string, number>;
+  /** 고객 용건에 모두 답이 나왔다고 판단한 시각 (마무리 신호·자동 종료 기준). 마이그레이션 전에는 없음 */
+  resolved_at?: string | null;
+  /** 연결·이관 기록 (마이그레이션 전에는 없음) */
+  handoff?: SessionHandoff | null;
+}
+
+export interface SessionHandoff {
+  /** pending: 고객이 연결을 받아들이고 기다리는 중 / done: 수강생이 연결·이관을 마침 */
+  status: "pending" | "done";
+  target?: string;
+  memo?: string;
+  at?: string;
 }
 
 export interface MessageRow {

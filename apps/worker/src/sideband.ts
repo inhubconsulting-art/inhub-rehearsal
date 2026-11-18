@@ -5,12 +5,22 @@
  * 언제: 음성 대화가 진행되는 동안.
  *     또 수강생이 말한 구간(시작·끝 시각, AI가 말하는 도중이었는지)을 숫자로만 모아 두었다가 통화가 끝나면 저장합니다
  *     (녹음은 저장하지 않음 → 말한 시간·말 속도·끼어들기 분석용).
+ *     종료 규칙은 텍스트와 같은 packages/shared/src/flow.ts 를 씁니다. 고객 용건이 다 처리되면 통화 중인 AI 고객에게
+ *     '이제 인사하고 끝내세요' 메시지를 보내고, 고객이 연결을 받아들이면 수강생 화면에 연결·이관 안내를 띄웁니다.
  * 리뷰 포인트: 음성 대화의 규칙(제한 시간 + 15초 여유, 고객이 끝낼 때 5초 기다렸다 끊기, 10분간 아무 말 없으면 '중단'으로
  *         정리)이 운영 기준과 맞는지 확인하세요.
  * =====================
  */
 import WebSocket from "ws";
-import { EVENT_TYPES, type CohortRow, type ScenarioContent, type SessionRow, type VoiceSegment } from "@inhub/shared";
+import {
+  decideTurnOutcome,
+  EVENT_TYPES,
+  WRAP_UP_DIRECTIVE,
+  type CohortRow,
+  type ScenarioContent,
+  type SessionRow,
+  type VoiceSegment,
+} from "@inhub/shared";
 import {
   addUsage,
   appendMessage,
@@ -45,6 +55,10 @@ class SidebandSession {
   /** 지금 AI 고객이 답을 만들고 있는 중인지 (끼어들기 판단용) */
   private aiResponding = false;
   private segmentsSaving: Promise<void> | null = null;
+  /** 마무리 신호를 준 시각과 그 뒤 수강생 발화 수 */
+  private resolvedAt: string | null;
+  private learnerTurnsSinceWrapUp = 0;
+  private handoffStatus: "pending" | "done" | null;
 
   constructor(
     readonly session: SessionRow,
@@ -55,6 +69,8 @@ class SidebandSession {
   ) {
     this.emotion = session.current_emotion ?? content.persona.initialEmotion;
     this.learnerTurns = initialLearnerTurns;
+    this.resolvedAt = session.resolved_at ?? null;
+    this.handoffStatus = session.handoff?.status ?? null;
   }
 
   start() {
@@ -144,6 +160,7 @@ class SidebandSession {
         const text = String(ev.transcript ?? "").trim();
         if (text) {
           this.learnerTurns += 1;
+          if (this.resolvedAt) this.learnerTurnsSinceWrapUp += 1;
           void this.enqueue(() => appendMessage(this.session.id, "learner", text));
         }
         // 쉬운 설명: 수강생 말을 글자로 바꾸는 데 든 사용량(전사 비용)도 누적합니다.
@@ -215,10 +232,42 @@ class SidebandSession {
       await db.rpc("set_customer_emotion", { p_session_id: this.session.id, p_emotion: state.emotion });
       await addUsage(this.session.id, usage);
 
-      // 쉬운 설명: 고객이 만족/화가 나서 끝내려 하거나 최대 턴을 넘으면 종료를 예약합니다.
-      if (state.endConversation) this.scheduleFinish(state.resolved ? "resolved" : "customer_left");
-      else if (this.learnerTurns >= this.content.maxTurns) this.scheduleFinish("turn_limit");
+      // 쉬운 설명: 종료 규칙(flow.ts)으로 끝낼지·마무리 신호를 줄지·연결 대기로 둘지 정합니다.
+      const outcome = decideTurnOutcome({
+        state,
+        resolvedAt: this.resolvedAt,
+        learnerTurnsSinceWrapUp: this.learnerTurnsSinceWrapUp,
+        learnerTurns: this.learnerTurns,
+        maxTurns: this.content.maxTurns,
+        handoffStatus: this.handoffStatus,
+      });
+      if (outcome.startWrapUp) {
+        this.resolvedAt = new Date().toISOString();
+        await db.from("sessions").update({ resolved_at: this.resolvedAt }).eq("id", this.session.id).then(() => {}, () => {});
+        this.sendSystem(WRAP_UP_DIRECTIVE);
+      }
+      if (outcome.handoffPending) {
+        this.handoffStatus = "pending";
+        await db
+          .from("sessions")
+          .update({ handoff: { status: "pending", at: new Date().toISOString() } })
+          .eq("id", this.session.id)
+          .then(() => {}, () => {});
+      }
+      if (outcome.endReason) this.scheduleFinish(outcome.endReason);
     });
+  }
+
+  /** 통화 중인 AI 고객에게 진행 안내(시스템 메시지)를 보냄. 고객 말로 읽히지 않고 다음 답변에만 반영됨 */
+  private sendSystem(text: string) {
+    const ws = this.ws;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(
+      JSON.stringify({
+        type: "conversation.item.create",
+        item: { type: "message", role: "system", content: [{ type: "input_text", text }] },
+      }),
+    );
   }
 
   /** 고객의 마지막 말이 다 재생되도록 잠시 기다렸다가 종료 */

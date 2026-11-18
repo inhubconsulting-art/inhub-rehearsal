@@ -56,7 +56,12 @@ export function ScenarioEditor({
     const nonEmpty = (a: string[]) => a.map((s) => s.trim()).filter(Boolean);
     return {
       ...c,
-      briefing: { ...c.briefing, facts: nonEmpty(c.briefing.facts), policies: nonEmpty(c.briefing.policies) },
+      briefing: {
+        ...c.briefing,
+        facts: nonEmpty(c.briefing.facts),
+        policies: nonEmpty(c.briefing.policies),
+        handoffTargets: nonEmpty(c.briefing.handoffTargets ?? []),
+      },
       customerKnowledge: nonEmpty(c.customerKnowledge),
       dynamics: {
         escalateWhen: nonEmpty(c.dynamics.escalateWhen),
@@ -67,6 +72,8 @@ export function ScenarioEditor({
       rubric: {
         items: c.rubric.items.map((r, i) => ({ ...r, id: r.id || `r${i + 1}` })),
         requiredSteps: c.rubric.requiredSteps.filter((s) => s.label.trim()).map((s, i) => ({ id: `s${i + 1}`, label: s.label.trim() })),
+        mustInform: nonEmpty(c.rubric.mustInform ?? []),
+        handoffExpected: (c.rubric.handoffExpected ?? "").trim(),
       },
       modelAnswers: c.modelAnswers.filter((m) => m.example.trim()),
     };
@@ -180,6 +187,14 @@ export function ScenarioEditor({
             <Lines label="확인된 정보 (한 줄에 하나)" value={c.briefing.facts} onChange={(v) => setB("facts", v)} />
             <Lines label="참고 정책 (한 줄에 하나)" value={c.briefing.policies} onChange={(v) => setB("policies", v)} />
           </div>
+          <Lines
+            label="연결·이관할 수 있는 곳 (한 줄에 하나, 예: 간호사 상담실 / 담당 부서 회신 예약)"
+            value={c.briefing.handoffTargets ?? []}
+            onChange={(v) => setB("handoffTargets", v)}
+          />
+          <p className="text-xs text-slate-500">
+            확인된 정보·참고 정책은 수강생만 봅니다. AI 고객은 이 내용을 모르므로, 수강생이 빠뜨리거나 틀리게 안내해도 되묻지 않습니다(평가에서 감점).
+          </p>
         </div>
       </Card>
 
@@ -249,7 +264,15 @@ export function ScenarioEditor({
         <div className="grid gap-4 md:grid-cols-2">
           <Lines label="감정이 올라가는 경우" value={c.dynamics.escalateWhen} onChange={(v) => setD("escalateWhen", v)} />
           <Lines label="감정이 누그러지는 경우" value={c.dynamics.calmWhen} onChange={(v) => setD("calmWhen", v)} />
-          <Lines label="만족하고 마무리하는 조건" value={c.dynamics.resolveWhen} onChange={(v) => setD("resolveWhen", v)} />
+          <div>
+            <Lines label="만족하고 마무리하는 조건" value={c.dynamics.resolveWhen} onChange={(v) => setD("resolveWhen", v)} />
+            {c.dynamics.resolveWhen.every((s) => !s.trim()) && (
+              <p className="mt-1 text-xs text-amber-700">
+                ⚠ 비어 있으면 AI 고객이 언제 만족하고 끝낼지 판단하기 어려워 대화가 길어질 수 있어요. 고객 입장의 용건(예: &lsquo;변경 일정과 준비
+                사항을 들으면 만족&rsquo;)을 적어 주세요.
+              </p>
+            )}
+          </div>
           <Lines label="화가 나서 끊는 조건" value={c.dynamics.hangupWhen} onChange={(v) => setD("hangupWhen", v)} />
         </div>
       </Card>
@@ -310,6 +333,23 @@ export function ScenarioEditor({
             value={c.rubric.requiredSteps.map((s) => s.label)}
             onChange={(v) => set("rubric", { ...c.rubric, requiredSteps: v.map((label, i) => ({ id: `s${i + 1}`, label })) })}
           />
+        </div>
+        <div className="mt-4">
+          <Lines
+            label="고객이 묻지 않아도 꼭 안내해야 할 내용 (한 줄에 하나, 빠뜨리거나 틀리면 감점, 고객은 모름)"
+            value={c.rubric.mustInform ?? []}
+            onChange={(v) => set("rubric", { ...c.rubric, mustInform: v })}
+          />
+        </div>
+        <div className="mt-4">
+          <Field label="연결·이관 기준 (언제 넘겨야 하고, 어떻게 넘기면 좋은지)">
+            <Textarea
+              value={c.rubric.handoffExpected ?? ""}
+              onChange={(e) => set("rubric", { ...c.rubric, handoffExpected: e.target.value })}
+              rows={2}
+              placeholder="예) 약 복용 등 의학적 판단 질문은 간호사 상담실로 연결. 연결 이유와 대기 시간을 안내하고, 문의 내용을 인계 메모에 남김."
+            />
+          </Field>
         </div>
       </Card>
 

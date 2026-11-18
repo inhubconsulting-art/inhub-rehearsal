@@ -19,10 +19,14 @@ export function emotionLabel(level: number | null | undefined): string {
 export const CustomerStateSchema = z.object({
   /** 0(차분)~4(매우 화남) */
   emotion: z.number(),
-  /** 고객의 문제가 해결되었는가 */
+  /** 고객이 가져온 용건마다 상담원의 답이나 처리를 들었는가 (안내 내용이 맞는지는 따지지 않음) */
   resolved: z.boolean(),
   /** 고객이 대화를 끝내려 하는가 (해결되어 인사하거나, 화가 나서 끊음) */
   endConversation: z.boolean(),
+  /** 상담원이 마무리 인사(통화 종료 멘트)를 했는가 */
+  learnerClosing: z.boolean(),
+  /** 상담원이 다른 담당자·부서로 연결하거나 회신을 약속했고, 고객이 받아들였는가 */
+  handoffAccepted: z.boolean(),
   /** 판단 근거 한 줄 */
   reason: z.string(),
 });
@@ -39,6 +43,7 @@ export type EndReason =
   | "time_limit"
   | "turn_limit"
   | "learner_ended"
+  | "transferred"
   | "abandoned"
   | "error";
 
@@ -48,6 +53,7 @@ export const END_REASON_LABELS: Record<EndReason, string> = {
   time_limit: "시간 초과",
   turn_limit: "턴 수 초과",
   learner_ended: "수강생이 종료",
+  transferred: "다른 담당자로 연결·이관",
   abandoned: "응답 없이 중단",
   error: "오류로 종료",
 };
