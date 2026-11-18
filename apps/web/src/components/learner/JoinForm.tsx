@@ -12,7 +12,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, ErrorText, Input } from "@/components/ui";
 
-export function JoinForm({ initialCode = "", profileSummary }: { initialCode?: string; profileSummary?: string }) {
+export function JoinForm({
+  initialCode = "",
+  entrySource,
+  profileSummary,
+}: {
+  initialCode?: string;
+  /** QR·공유 주소로 들어와 코드가 채워진 경우 그 경로 (qr / link) */
+  entrySource?: "qr" | "link";
+  profileSummary?: string;
+}) {
   const router = useRouter();
   const [code, setCode] = useState(initialCode);
   const [consent, setConsent] = useState(false);
@@ -26,7 +35,12 @@ export function JoinForm({ initialCode = "", profileSummary }: { initialCode?: s
     const res = await fetch("/api/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: code.trim().toUpperCase(), consent }),
+      // 채워진 코드를 그대로 쓰면 QR·주소로 들어온 것, 코드를 바꿔 입력했으면 직접 입력('code')으로 기록
+      body: JSON.stringify({
+        code: code.trim().toUpperCase(),
+        consent,
+        source: entrySource && code.trim().toUpperCase() === initialCode.trim().toUpperCase() ? entrySource : "code",
+      }),
     });
     const json = await res.json();
     setBusy(false);

@@ -1,6 +1,6 @@
 /**
  * ===== 쉬운 설명 =====
- * 무엇: 실제로 리포트를 만드는 곳. ① 대화 평가(대화 → AI 코치 → 검사 → 저장) ② 반 전체 요약.
+ * 무엇: 실제로 리포트를 만드는 곳. ① 대화 평가(대화 → AI 코치 → 검사 → 저장 → 대화 분석) ② 반 전체 요약.
  * 언제: 대화가 끝날 때마다, 강사가 요약을 요청할 때.
  * 리뷰 포인트: 평가 결과가 실제 수강생 발화를 인용하지 않으면 한 번 다시 시키고, 그래도 틀린 인용은 버리는 규칙(PRD R-02)을
  *         확인하세요. 수강생 발화가 하나도 없으면 평가하지 않습니다.
@@ -20,6 +20,7 @@ import {
   type SessionRow,
 } from "@inhub/shared";
 import { addUsage, db, getMessages, loadScenarioContent, openai } from "./clients";
+import { analyzeSessionSafe } from "./analytics";
 import { env } from "./env";
 
 /** 대화 평가 → evaluations 저장 (PRD 6장) */
@@ -90,6 +91,8 @@ export async function evaluateSession(sessionId: string) {
   if (error) throw error;
   await db.from("sessions").update({ status: "evaluated" }).eq("id", sessionId);
   await addUsage(sessionId, usage);
+  // 쉬운 설명: 리포트가 나온 뒤 대화 분석(응답 시간, 쿠션어·금지어 등)을 계산해 둡니다. 실패해도 리포트에는 영향 없음.
+  await analyzeSessionSafe(sessionId);
 }
 
 /** 반 전체 요약 (PRD A-21) */

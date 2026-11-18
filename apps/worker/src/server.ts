@@ -1,6 +1,7 @@
 /**
  * ===== 쉬운 설명 =====
- * 무엇: 상시 서버 본체. ① 웹앱의 '통화 기록 시작' 요청 받기 ② 리포트 대기열 처리 시작 ③ 1분마다 방치된 대화 정리.
+ * 무엇: 상시 서버 본체. ① 웹앱의 '통화 기록 시작' 요청 받기 ② 리포트 대기열 처리 시작 ③ 1분마다 방치된 대화 정리
+ *     ④ 2분마다 아직 분석하지 않은 지난 실습을 조금씩 분석.
  * 언제: 상시 서버가 켜져 있는 동안 계속.
  * 리뷰 포인트: /health 주소로 서버 상태(기록 중인 통화 수, 처리 중인 작업 수)를 확인할 수 있습니다.
  * =====================
@@ -10,6 +11,7 @@ import { timingSafeEqual } from "node:crypto";
 import { env } from "./env";
 import { activeSidebands, attachSideband, sweepAbandoned } from "./sideband";
 import { queueStats, startQueueLoop, stopQueueLoop } from "./queue";
+import { analyzePending } from "./analytics";
 
 const app = Fastify({ logger: { level: "info" } });
 
@@ -39,10 +41,15 @@ app.post<{ Body: { sessionId?: string; callId?: string } }>("/sideband/attach", 
 startQueueLoop();
 // 쉬운 설명: 1분마다 방치된 대화를 정리합니다.
 const sweeper = setInterval(() => void sweepAbandoned().catch((e) => console.error("[sweep]", e)), 60_000);
+// 쉬운 설명: 켜지고 30초 뒤, 그리고 2분마다 분석이 없는 지난 실습을 30개씩 분석합니다(처음 반영 시 과거 기록 채우기).
+const backfillStart = setTimeout(() => void analyzePending(), 30_000);
+const backfill = setInterval(() => void analyzePending(), 120_000);
 
 const shutdown = async () => {
   stopQueueLoop();
   clearInterval(sweeper);
+  clearTimeout(backfillStart);
+  clearInterval(backfill);
   await app.close();
   process.exit(0);
 };

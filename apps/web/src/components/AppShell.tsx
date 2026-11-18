@@ -2,7 +2,8 @@
  * ===== 쉬운 설명 =====
  * 무엇: 화면 위쪽 메뉴 바. 역할에 따라 보이는 메뉴가 달라집니다.
  * 언제: 로그인 후 대부분의 화면.
- * 리뷰 포인트: 화면 맨 아래에는 이용약관·개인정보처리방침 링크가 항상 보입니다(법령상 상시 게시 의무).
+ * 리뷰 포인트: 탭을 처음 열 때 '접속' 기록을 한 번 남깁니다(VisitTracker, 화면에는 안 보임).
+ *         화면 맨 아래에는 이용약관·개인정보처리방침 링크가 항상 보입니다(법령상 상시 게시 의무).
  *         수강생에게는 '실습'만, 강사에게는 '강사 대시보드'까지, 관리자에게는 '시나리오·사용자·사용량'까지 보이는지 확인하세요.
  * =====================
  */
@@ -11,6 +12,7 @@ import type { ReactNode } from "react";
 import type { CurrentUser } from "@/lib/auth";
 import { LogoutButton } from "./LogoutButton";
 import { NavLinks } from "./NavLinks";
+import { VisitTracker } from "./tracking/VisitTracker";
 
 const ROLE_LABEL = { learner: "수강생", instructor: "강사", admin: "운영 관리자" } as const;
 
@@ -41,6 +43,7 @@ export function AppShell({ user, children, wide }: { user: CurrentUser; children
         </div>
       </header>
       <main className={wide ? "mx-auto max-w-7xl px-4 py-6" : "mx-auto max-w-5xl px-4 py-6"}>{children}</main>
+      <VisitTracker />
       <footer className="no-print mt-10 border-t border-slate-100 py-5 text-center text-xs text-slate-400">
         <Link href="/terms" className="hover:underline">
           이용약관

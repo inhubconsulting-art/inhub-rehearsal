@@ -11,3 +11,4 @@ export * from "./emotion";
 export * from "./prompt";
 export * from "./db";
 export * from "./profile";
+export * from "./analytics";

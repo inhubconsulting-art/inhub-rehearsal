@@ -35,10 +35,10 @@ export const PRIVACY_OFFICER = {
 export const RETENTION_PERIOD = "마지막 이용일로부터 1년";
 
 /** 시행일 (뒤의 T00:00:00+09:00 는 '한국 시간 0시'라는 뜻이니 날짜 부분만 바꾸세요) */
-export const EFFECTIVE_DATE = "2026-11-18T00:00:00+09:00";
+export const EFFECTIVE_DATE = "2026-11-19T00:00:00+09:00";
 
 /** 이전 시행일 목록 (문서를 고칠 때마다 이전 시행일을 같은 형식으로 앞에 추가) */
-export const PREVIOUS_VERSIONS: string[] = [];
+export const PREVIOUS_VERSIONS: string[] = ["2026-11-18T00:00:00+09:00"];
 
 /**
  * 개인정보 처리를 맡기는 외부 업체 (처리위탁·국외 이전).
