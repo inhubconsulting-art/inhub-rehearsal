@@ -19,7 +19,7 @@ const SLIDES: { image: string; title: string; desc: string; art: Art }[] = [
   { image: "/login/slide-1.jpg", art: "chat", title: "실제 고객처럼 반응하는 AI 고객", desc: "말투와 태도에 바로 반응하고, 상황마다 다른 고객을 만나요. 실전 같은 응대를 미리 연습하세요." },
   { image: "/login/slide-2.jpg", art: "voice", title: "헤드셋을 끼고, 전화하듯 음성으로", desc: "실제 통화처럼 말하고 들으며 연습해요. 머뭇거려도 고객이 기다려 줘요." },
   { image: "/login/slide-3.jpg", art: "report", title: "끝나면 바로 코칭 리포트", desc: "역량별 점수, 빠뜨린 안내, '이렇게 말해 보세요'까지. 무엇을 고칠지 바로 보여요." },
-  { image: "/login/slide-4.jpg", art: "path", title: "병원·통신·금융, 업종별 실제 상황 그대로", desc: "내 업종과 직무에 맞는 고객을 만나요. 강사님의 교육 과정으로, 혼자 연습은 이용권으로 언제든지." },
+  { image: "/login/slide-4.jpg", art: "path", title: "연습할수록 단단해지는 응대 역량", desc: "같은 상황도 다시 도전하며 점수와 말 습관의 변화를 확인해요. 어제보다 나아진 내 응대를 만나 보세요." },
 ];
 const INTERVAL_MS = 5500;
 
