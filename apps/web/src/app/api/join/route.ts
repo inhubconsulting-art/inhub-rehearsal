@@ -30,10 +30,12 @@ export async function POST(req: Request) {
     const db = adminClient();
     const { data: cohort } = await db
       .from("cohorts")
-      .select("id, status")
+      .select("id, status, client_name")
       .eq("join_code", body.data.code.toUpperCase())
       .maybeSingle();
-    if (!cohort) throw new HttpError(404, "입장 코드가 올바르지 않습니다.");
+    // 개인 연습·미리보기 전용 차수는 코드로 들어올 수 없음
+    const cn = (cohort as { client_name: string | null } | null)?.client_name;
+    if (!cohort || cn === "__practice__" || cn === "__preview__") throw new HttpError(404, "입장 코드가 올바르지 않습니다.");
     if ((cohort as { status: string }).status === "ended") throw new HttpError(400, "이미 종료된 교육입니다.");
 
     const cohortId = (cohort as { id: string }).id;

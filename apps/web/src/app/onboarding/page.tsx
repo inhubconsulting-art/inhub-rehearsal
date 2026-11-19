@@ -13,6 +13,7 @@ import { requirePageUser } from "@/lib/auth";
 import { Card } from "@/components/ui";
 import { ProfileForm } from "@/components/ProfileForm";
 import { LogoutButton } from "@/components/LogoutButton";
+import { LogoMark } from "@/components/LogoMark";
 
 export default async function Onboarding({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const u = await requirePageUser(undefined, { allowIncompleteProfile: true });
@@ -25,7 +26,10 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
       <div className="w-full max-w-3xl">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm font-bold text-brand-600">인허브 리허설</div>
+            <div className="flex items-center gap-1.5 text-sm font-bold text-brand-600">
+              <LogoMark className="h-5 w-5" />
+              인허브 리허설
+            </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight">프로필을 완성해 주세요</h1>
             <p className="mt-1 text-sm text-slate-500">처음 한 번만 입력하면 돼요. 30초면 끝나요.</p>
           </div>

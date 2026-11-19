@@ -150,6 +150,12 @@ export function CohortDashboard(props: {
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5 text-sm">
             <Link
+              href={`/instructor/cohorts/${cohort.id}/analytics`}
+              className="inline-flex items-center rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            >
+              📊 심화 분석
+            </Link>
+            <Link
               href={`/instructor/cohorts/${cohort.id}/settings`}
               className="inline-flex items-center rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
             >
@@ -503,6 +509,9 @@ function AnalysisView({
         <CardTitle
           right={
             <div className="flex gap-2">
+              <LinkButton href={`/instructor/cohorts/${cohortId}/analytics`} variant="secondary">
+                응대 습관·향상도 분석
+              </LinkButton>
               <LinkButton href={`/instructor/cohorts/${cohortId}/present`} variant="secondary">
                 발표 화면
               </LinkButton>

@@ -2,7 +2,7 @@
  * ===== 쉬운 설명 =====
  * 무엇: 시나리오 목록(상태, 버전, 수정일).
  * 언제: 관리자 메뉴 '시나리오'.
- * 리뷰 포인트: 건너뛰어도 됩니다.
+ * 리뷰 포인트: '개인 연습' 스위치를 켜고 '게시됨'이면 수강생 '연습하기'에 보입니다.
  * =====================
  */
 import Link from "next/link";
@@ -10,6 +10,7 @@ import { DIFFICULTY_LABELS, INDUSTRY_LABELS, SCENARIO_TYPE_LABELS, type Scenario
 import { requirePageUser } from "@/lib/auth";
 import { adminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/AppShell";
+import { PracticeToggle } from "@/components/admin/PracticeToggle";
 import { Badge, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
 
@@ -42,6 +43,7 @@ export default async function ScenarioList() {
                 <th className="px-4 py-2 font-medium">유형</th>
                 <th className="px-4 py-2 font-medium">난이도</th>
                 <th className="px-4 py-2 font-medium">상태</th>
+                <th className="px-4 py-2 font-medium" title="켜면 수강생 '연습하기'(개인 연습, 이용권 차감)에 보여요">개인 연습</th>
                 <th className="px-4 py-2 text-right font-medium">버전</th>
                 <th className="px-4 py-2 text-right font-medium">수정일</th>
               </tr>
@@ -59,6 +61,13 @@ export default async function ScenarioList() {
                   <td className="px-4 py-2">{DIFFICULTY_LABELS[r.difficulty as keyof typeof DIFFICULTY_LABELS] ?? r.difficulty}</td>
                   <td className="px-4 py-2">
                     <Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Badge>
+                  </td>
+                  <td className="px-4 py-2">
+                    <PracticeToggle
+                      scenarioId={r.id}
+                      initial={Boolean(r.practice_public)}
+                      published={r.status === "published"}
+                    />
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums">v{r.current_version}</td>
                   <td className="px-4 py-2 text-right text-slate-500">{fmtDate(r.updated_at)}</td>

@@ -1,7 +1,7 @@
 "use client";
 /**
  * ===== 쉬운 설명 =====
- * 무엇: 로그인·회원가입·비밀번호 찾기 화면. 가입 시 이름·이메일·비밀번호만 받고,
+ * 무엇: 로그인·회원가입·비밀번호 찾기 화면. 넓은 화면에서는 왼쪽에 서비스 소개 슬라이드(LoginShowcase), 오른쪽에 로그인 창. 가입 시 이름·이메일·비밀번호만 받고,
  *      소속·업종·직무·경력은 가입 직후 '프로필 완성' 화면(/onboarding)에서 받습니다(Google 가입자와 같은 흐름).
  * 언제: 처음 접속하거나 로그아웃 상태일 때.
  * 리뷰 포인트:
@@ -18,6 +18,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { track } from "@/lib/track";
+import { LoginShowcase } from "@/components/LoginShowcase";
+import { LogoMark } from "@/components/LogoMark";
 import { isValidEmail, suggestEmailFix } from "@/lib/email";
 import { Button, Card, ErrorText, Field, Input } from "@/components/ui";
 
@@ -172,8 +174,9 @@ function LoginForm() {
           : "가입하고 시작하기";
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm xl:border-0 xl:shadow-none">
       <div className="mb-6 text-center">
+        <LogoMark className="mx-auto mb-2 h-12 w-12 text-brand-500" />
         <div className="text-2xl font-bold text-brand-600">인허브 리허설</div>
         <p className="mt-1 text-sm text-slate-500">AI 고객과 함께하는 CS 응대 실습</p>
       </div>
@@ -330,11 +333,15 @@ function AgreeNotice({ action }: { action: string }) {
 }
 
 export default function LoginPage() {
+  // 쉬운 설명: 넓은 화면은 왼쪽에 서비스 소개 슬라이드, 오른쪽에 로그인 창. 휴대폰은 로그인 창만.
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+    <div className="min-h-screen xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(400px,28%)]">
+      <LoginShowcase className="hidden xl:block" />
+      <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10 xl:border-l xl:border-slate-200">
+        <Suspense>
+          <LoginForm />
+        </Suspense>
+      </div>
     </div>
   );
 }
