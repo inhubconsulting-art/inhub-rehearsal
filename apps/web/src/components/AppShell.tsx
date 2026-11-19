@@ -50,6 +50,7 @@ function navFor(role: CurrentUser["profile"]["role"]): NavGroup[] {
         title: "콘텐츠",
         items: [
           { href: "/admin/scenarios", label: "시나리오", icon: "book" },
+          { href: "/admin/lexicon", label: "표현 목록", icon: "quote" },
           { href: "/admin/exams", label: "모의고사 문항", icon: "exam", soon: "곧 출시" },
         ],
       },
@@ -58,7 +59,7 @@ function navFor(role: CurrentUser["profile"]["role"]): NavGroup[] {
         items: [
           { href: "/admin/users", label: "사용자·이용권", icon: "users" },
           { href: "/admin/usage", label: "사용량·비용", icon: "coin" },
-          { href: "/admin/analytics", label: "분석", icon: "chart", soon: "준비 중" },
+          { href: "/admin/analytics", label: "분석", icon: "chart" },
         ],
       },
     );

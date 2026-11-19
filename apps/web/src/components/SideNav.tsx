@@ -11,7 +11,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
-export type NavIcon = "home" | "play" | "exam" | "class" | "chart" | "ticket" | "user" | "book" | "users" | "coin";
+export type NavIcon = "home" | "play" | "exam" | "class" | "chart" | "ticket" | "user" | "book" | "users" | "coin" | "quote";
 export interface NavItem {
   href: string;
   label: string;
@@ -34,6 +34,7 @@ const PATHS: Record<NavIcon, string> = {
   user: "M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
   book: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19a2 2 0 0 1 2-2h13",
   users: "M9 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM2 20c1-3.5 3.8-5 7-5s6 1.5 7 5M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2 .6 3.4 2.2 4 5",
+  quote: "M4 5h16v11H9l-5 4zM8 9h8M8 12h5",
   coin: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M14.5 9.5c0-1.2-1.1-2-2.5-2s-2.5.8-2.5 2 1.1 1.6 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2-2.5-.8-2.5-2",
 };
 

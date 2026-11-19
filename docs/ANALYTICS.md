@@ -40,9 +40,12 @@
 
 규칙을 바꾸면 `ANALYZER_VERSION`을 올리세요. 표현 목록을 바꾸면 목록 지문(`lexicon_hash`)이 달라집니다. 둘 다 상시 서버가 2분마다 30개씩 지난 실습을 자동으로 다시 분석합니다.
 
-## 4. 지금 데이터로 계산할 것 (PR C에서 화면으로)
+## 4. 화면 (PR B · PR C)
 
-- 가입 → 프로필 완성 → 입장 → 첫 실습 → 첫 리포트 퍼널: `profiles`, `enrollments`, `sessions`, `learner_events(report_view)`
-- 학습 시간·시간대·재도전·중도 종료: `sessions`
-- 역량별 추이·필수 단계 누락·시나리오 난이도: `evaluations.result`
-- 업종·직무·경력별 비교: `enrollments.profile_snapshot`
+| 화면 | 누가 | 내용 | 코드 |
+|---|---|---|---|
+| 관리자 → **표현 목록** (`/admin/lexicon`) | 관리자 | 분류별 표현 추가·켜기/끄기·삭제, 최근 실습 500개 기준 사용 횟수, '문장 넣어 보기' | `app/admin/lexicon`, `components/admin/LexiconManager.tsx`, `app/api/lexicon` |
+| 교육 차수 → **📊 심화 분석** (`/instructor/cohorts/[id]/analytics`) | 담당 강사·관리자 | 참여·필수 완료율, 응대 습관(첫 시도→최근 시도), 많이 쓴 표현, 반 전체 반복 말, 재도전 점수 변화, 역량 변화, 자주 빠뜨리는 단계·안내, 시나리오 실제 난이도, 수강생별 습관, 수강생 구성 | `lib/cohort-analytics.ts` |
+| 관리자 → **분석** (`/admin/analytics`) | 관리자 | 최근 차수 30개 비교표 | `app/admin/analytics` |
+
+가입 퍼널·유입 경로·기기·비용 같은 운영 숫자는 서비스 화면 대신 **Looker Studio**(`docs/METABASE.md`의 읽기 전용 계정 + `analytics` 스키마)에서 봅니다.
