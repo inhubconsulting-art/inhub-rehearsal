@@ -14,3 +14,6 @@ _to_delete/
 # Claude 앱이 만든 결과물 폴더 (키 관리표 등 내부 문서가 들어 있으므로 업로드 제외)
 Claude outputs/
 *.xlsx
+
+# 대화 시뮬레이터 결과 (npm run sim)
+simulations/

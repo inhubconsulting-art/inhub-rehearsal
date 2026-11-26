@@ -1,0 +1,6 @@
+{
+  "name": "@inhub/simulate",
+  "private": true,
+  "type": "module",
+  "description": "대화 시뮬레이터 (npm run sim). 저장소 루트의 node_modules 를 그대로 씁니다."
+}

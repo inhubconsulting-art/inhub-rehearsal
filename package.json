@@ -16,6 +16,7 @@
     "build:web": "npm run build -w @inhub/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:push": "supabase db push",
-    "db:seed": "supabase db reset"
+    "db:seed": "supabase db reset",
+    "sim": "tsx scripts/simulate/run.ts"
   }
 }
